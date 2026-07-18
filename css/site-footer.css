@@ -1,0 +1,77 @@
+/* DWU PDMIS — shared site footer (all pages) */
+
+.site-footer {
+    background-color: #2c333d;
+    border-top: 3px solid #17a2b8;
+    color: #b8bec6;
+    padding: 36px 28px 40px;
+    width: 100%;
+    flex-shrink: 0;
+    margin-top: auto;
+}
+
+.footer-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+}
+
+.footer-col {
+    text-align: center;
+}
+
+.footer-col h3 {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 14px;
+}
+
+.footer-col p {
+    font-size: 13px;
+    line-height: 1.65;
+    color: #b8bec6;
+    margin: 0;
+}
+
+.footer-col a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.footer-col a:hover {
+    text-decoration: underline;
+}
+
+.footer-contact-line {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+    font-size: 13px;
+    line-height: 1.65;
+    color: #b8bec6;
+}
+
+.footer-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    margin-top: 3px;
+    color: #9aa3ad;
+}
+
+@media (max-width: 900px) {
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 28px;
+    }
+
+    .site-footer {
+        padding: 28px 20px 32px;
+    }
+}
