@@ -1,1 +1,23 @@
+# Environment files (database passwords, API keys, secrets)
+.env
 
+# Logs
+logs/
+*.log
+
+# User uploaded files
+uploads/
+
+# Database backups
+*.sql
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# VS Code/Cursor settings
+.vscode/
