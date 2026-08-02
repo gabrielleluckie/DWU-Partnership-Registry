@@ -1,0 +1,503 @@
+/**
+ * DWU Partnership Form — Premium Bootstrap 5 Dashboard Theme
+ */
+
+:root {
+    --dwu-navy: #0f172a;
+    --dwu-navy-soft: #1e293b;
+    --dwu-accent: #0284c7;
+    --dwu-accent-emerald: #059669;
+    --dwu-accent-subtle: rgba(2, 132, 199, 0.1);
+    --dwu-surface: #f8fafc;
+    --dwu-card-radius: 0.75rem;
+    --partnership-input-size: 0.9375rem;
+    --partnership-label-size: 0.8125rem;
+}
+
+.partnership-form-shell {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--dwu-surface);
+    border-radius: var(--dwu-card-radius);
+}
+
+.partnership-stepper-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+}
+
+/* ── Scrollspy stepper nav ── */
+.partnership-stepper-card {
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    background: #fff;
+}
+
+#partnership-scrollspy .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.55rem;
+    margin-bottom: 0.15rem;
+    border-radius: 0.5rem;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-left: 2px solid transparent;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+#partnership-scrollspy .nav-link:hover {
+    background: rgba(2, 132, 199, 0.06);
+    color: var(--dwu-accent);
+}
+
+#partnership-scrollspy .nav-link.active {
+    background: var(--dwu-accent-subtle);
+    color: var(--dwu-accent);
+    font-weight: 600;
+    border-left-color: var(--dwu-accent);
+}
+
+.section-letter-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 999px;
+    background: rgba(2, 132, 199, 0.12);
+    color: var(--dwu-accent);
+    font-size: 0.62rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+#partnership-scrollspy .nav-link.active .section-letter-badge {
+    background: var(--dwu-accent);
+    color: #fff;
+}
+
+.stepper-icon {
+    font-size: 0.8rem;
+    opacity: 0.75;
+    flex-shrink: 0;
+}
+
+#partnership-scrollspy .nav-link.active .stepper-icon {
+    opacity: 1;
+    color: var(--dwu-accent);
+}
+
+/* ── Form header navbar (DWU brand) ── */
+:root {
+    --dwu-brand-green: #006837;
+    --dwu-brand-gold: #f8a51d;
+    --dwu-header-deep: #0f2e23;
+    --dwu-header-deep-alt: #0b2519;
+}
+
+.partnership-form-header {
+    overflow: hidden;
+    border-radius: 0.75rem;
+}
+
+.partnership-navbar {
+    background: linear-gradient(135deg, var(--dwu-header-deep-alt) 0%, var(--dwu-header-deep) 45%, var(--dwu-brand-green) 100%);
+    border: 1px solid rgba(248, 165, 29, 0.12);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    padding: 0;
+}
+
+.partnership-navbar-inner {
+    position: relative;
+}
+
+.partnership-navbar-inner::after {
+    content: '';
+    position: absolute;
+    top: -30%;
+    right: -5%;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(248, 165, 29, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.partnership-navbar-brand {
+    max-width: 100%;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.partnership-navbar-brand:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+}
+
+.partnership-navbar-logo {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    border-radius: 0.5rem;
+    background: #fff;
+    padding: 0.15rem;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+    flex-shrink: 0;
+}
+
+.partnership-brand-division {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.88);
+    line-height: 1.35;
+}
+
+.partnership-form-title {
+    color: #fff;
+    font-size: 0.9375rem;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+}
+
+.partnership-pdmis-badge {
+    background: linear-gradient(135deg, var(--dwu-brand-gold) 0%, #e8940f 100%);
+    color: var(--dwu-header-deep-alt);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 0.25em 0.65em;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 1px 4px rgba(248, 165, 29, 0.3);
+}
+
+.partnership-navbar-toggler {
+    border: 1px solid rgba(248, 165, 29, 0.35);
+    padding: 0.35rem 0.55rem;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+
+.partnership-navbar-toggler:hover,
+.partnership-navbar-toggler:focus {
+    border-color: var(--dwu-brand-gold);
+    background: rgba(248, 165, 29, 0.12);
+    box-shadow: 0 0 0 0.2rem rgba(248, 165, 29, 0.2);
+}
+
+.partnership-navbar-toggler:active {
+    transform: scale(0.96);
+}
+
+.partnership-navbar-toggler .navbar-toggler-icon {
+    filter: brightness(1.1);
+    transition: transform 0.3s ease;
+}
+
+.partnership-navbar-toggler[aria-expanded="true"] .navbar-toggler-icon {
+    transform: rotate(90deg);
+}
+
+.partnership-instruction-bar {
+    background: rgba(11, 37, 25, 0.92) !important;
+    border: 1px solid rgba(248, 165, 29, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 0 0 0.75rem 0.75rem !important;
+    color: rgba(255, 255, 255, 0.9);
+    padding: 0.5rem 0.85rem;
+}
+
+.partnership-instruction-icon {
+    color: var(--dwu-brand-gold);
+    font-size: 0.95rem;
+    margin-top: 0.05rem;
+}
+
+.partnership-instruction-text {
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.partnership-instruction-close {
+    opacity: 0.65;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.partnership-instruction-close:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+@media (min-width: 992px) {
+    .partnership-navbar-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .partnership-brand-division {
+        font-size: 0.65rem;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .partnership-navbar-collapse {
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        margin-top: 0.5rem;
+        padding-top: 0.25rem;
+    }
+
+    .partnership-title-block {
+        text-align: left !important;
+    }
+}
+
+/* Legacy banner alias — kept for dark-theme overrides */
+.partnership-form-banner {
+    background: linear-gradient(135deg, var(--dwu-header-deep-alt) 0%, var(--dwu-header-deep) 45%, var(--dwu-brand-green) 100%);
+    color: #fff;
+}
+
+/* ── Section cards ── */
+.partnership-form-shell .form-section {
+    scroll-margin-top: 4.5rem;
+    border: 0;
+    border-radius: var(--dwu-card-radius);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.partnership-form-shell .form-section:hover {
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.07);
+}
+
+.section-header-band {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding-bottom: 0.65rem;
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.section-header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.15), rgba(5, 150, 105, 0.12));
+    color: var(--dwu-accent);
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.section-header-title {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--dwu-navy);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.section-header-subtitle {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    margin: 0.1rem 0 0;
+}
+
+/* ── Form controls ── */
+.partnership-form-shell .form-control,
+.partnership-form-shell .form-select {
+    border-color: #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 0.45rem 0.75rem;
+    font-size: var(--partnership-input-size);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.partnership-form-shell .form-control:focus,
+.partnership-form-shell .form-select:focus {
+    border-color: var(--dwu-accent);
+    box-shadow: 0 0 0 0.2rem rgba(2, 132, 199, 0.18);
+}
+
+.partnership-form-shell .form-label {
+    color: #475569;
+    font-size: var(--partnership-label-size);
+    margin-bottom: 0.25rem;
+}
+
+/* ── Selection tiles (radio/checkbox cards) ── */
+.selection-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.35rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: 0.5rem !important;
+    border: 1.5px solid #e2e8f0 !important;
+    background: #fff !important;
+    color: #475569 !important;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.selection-tile:hover {
+    border-color: rgba(2, 132, 199, 0.45) !important;
+    background: rgba(2, 132, 199, 0.04) !important;
+    color: var(--dwu-accent) !important;
+    transform: translateY(-1px);
+}
+
+.btn-check:checked + .selection-tile {
+    border-color: var(--dwu-accent) !important;
+    background: var(--dwu-accent-subtle) !important;
+    color: var(--dwu-accent) !important;
+    font-weight: 600;
+    box-shadow: 0 0 0 1px rgba(2, 132, 199, 0.2);
+}
+
+.selection-tile-check {
+    justify-content: flex-start;
+    text-align: left;
+}
+
+/* ── Conditional panels ── */
+.conditional-panel {
+    animation: panelSlideIn 0.28s ease-out;
+}
+
+@keyframes panelSlideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Drop zone ── */
+.drop-zone {
+    border: 2px dashed #cbd5e1 !important;
+    border-radius: 1rem !important;
+    background: #f8fafc;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.drop-zone:hover,
+.drop-zone.is-dragover {
+    border-color: var(--dwu-accent) !important;
+    background: rgba(2, 132, 199, 0.04);
+    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.08);
+}
+
+/* ── Section J comment cards ── */
+.admin-comment-card {
+    border: 2px solid rgba(2, 132, 199, 0.25);
+    border-radius: 1rem;
+    background: linear-gradient(160deg, rgba(2, 132, 199, 0.06) 0%, #fff 60%);
+}
+
+.admin-comment-card .card-header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: var(--dwu-accent);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.director-review-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    background: #f1f5f9;
+}
+
+.status-pill-pending {
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+}
+
+/* ── Compact sticky action bar ── */
+.partnership-action-bar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 0.5rem;
+    box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.06);
+    margin-top: 0.5rem;
+    z-index: 1020;
+}
+
+.partnership-action-bar .btn-primary {
+    background: linear-gradient(135deg, var(--dwu-accent) 0%, #0369a1 100%);
+    border: 0;
+    font-weight: 600;
+}
+
+.partnership-action-bar .btn-primary:hover {
+    background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+}
+
+/* ── Validation ── */
+.partnership-form-shell .field-error {
+    border-color: #e11d48 !important;
+    box-shadow: 0 0 0 0.2rem rgba(225, 29, 72, 0.12) !important;
+}
+
+.field-error-msg {
+    font-size: 0.75rem;
+    color: #e11d48;
+    margin-top: 0.25rem;
+}
+
+.form-error-banner {
+    animation: panelSlideIn 0.25s ease-out;
+}
+
+/* ── Mobile stepper ── */
+@media (max-width: 991.98px) {
+    #partnership-scrollspy {
+        flex-direction: row !important;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 0.25rem;
+        scrollbar-width: thin;
+    }
+
+    #partnership-scrollspy .nav-link {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    #partnership-scrollspy .nav-link .stepper-label {
+        display: none;
+    }
+
+    .partnership-form-shell .form-section {
+        scroll-margin-top: 3.75rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .partnership-stepper-card {
+        top: 4rem;
+        max-width: 11.5rem;
+    }
+
+    #partnership-scrollspy .stepper-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}

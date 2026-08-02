@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/includes/guard.php';
+require_once __DIR__ . '/includes/dev-auth.php';
 
 if (isLoggedIn()) {
     $user = currentUser($pdo);
@@ -17,21 +18,42 @@ $success = flashMessage('success');
 $loginError = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
-    $password = $_POST['password'] ?? '';
-
-    if (!is_string($email) || $email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $loginError = 'Please enter a valid email address.';
-    } elseif ($password === '') {
-        $loginError = 'Please enter your password.';
-    } else {
-        $user = fetchUserByEmail($pdo, strtolower(trim($email)));
-
-        if ($user === null || !password_verify($password, $user['password'])) {
-            $loginError = 'Invalid email or password. Please try again.';
+    if (!empty($_POST['dev_quick_login'])) {
+        if (!isDevAuthEnabled()) {
+            $loginError = 'Development quick-login is not available in this environment.';
         } else {
-            loginUser($user);
-            redirect('router.php');
+            $devEmail = strtolower(trim((string) ($_POST['email'] ?? '')));
+
+            if ($devEmail === '') {
+                $loginError = 'Please select a development test account.';
+            } elseif (!attemptDevQuickLogin($pdo, $devEmail)) {
+                $loginError = 'Dev quick-login failed. Ensure seeded users exist (run scripts/seed_dev_users.sql).';
+            } else {
+                $user = currentUser($pdo);
+                redirectToRoleDashboard($user['role'] ?? $_SESSION['user_role'] ?? ROLE_CAMPUS_ADMIN);
+            }
+        }
+    } else {
+        $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+        $password = $_POST['password'] ?? '';
+
+        if (!is_string($email) || $email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $loginError = 'Please enter a valid email address.';
+        } elseif ($password === '') {
+            $loginError = 'Please enter your password.';
+        } elseif (!usersTableHasPasswordColumn($pdo)) {
+            $loginError = isDevAuthEnabled()
+                ? 'Password login is disabled locally until SSO or password columns are configured. Use Dev Quick-Login below.'
+                : 'Password authentication is not configured. Contact the system administrator.';
+        } else {
+            $user = fetchUserByEmail($pdo, strtolower(trim($email)));
+
+            if ($user === null || !password_verify($password, $user['password'] ?? '')) {
+                $loginError = 'Invalid email or password. Please try again.';
+            } else {
+                loginUser($user);
+                redirect('router.php');
+            }
         }
     }
 }
@@ -117,6 +139,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </button>
                 </form>
 
+                <?php require __DIR__ . '/includes/dev-quick-login.php'; ?>
+
+                <?php if (!isDevAuthEnabled()): ?>
                 <div class="mt-6 rounded-lg bg-slate-50 p-4 text-xs text-slate-500">
                     <p class="font-semibold text-slate-700">Demo credentials</p>
                     <ul class="mt-2 space-y-1">
@@ -126,6 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <li>Campus Admin: asanki@dwu.ac.pg / campus123</li>
                     </ul>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

@@ -91,22 +91,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pendingProposals = getProposalsByStatus('pending');
+$pendingCount = count($pendingProposals);
 $counts = fetchAgreementCounts($pdo);
 $partners = fetchPartners($pdo);
 
 renderDirectorDashboardHeader(
     $user,
     'Partnership Director Dashboard',
-    $pendingProposals
+    $pendingProposals,
+    $pendingCount
 );
 ?>
 
 <?php if ($message = flashMessage('success')): ?>
-    <div class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><?= e($message) ?></div>
+    <div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><?= e($message) ?></div>
 <?php endif; ?>
 
 <?php if ($message = flashMessage('error')): ?>
-    <div class="mb-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><?= e($message) ?></div>
+    <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><?= e($message) ?></div>
+<?php endif; ?>
+
+<!-- Dynamic proposal notification (pending queue only) -->
+<?php if ($pendingCount > 0): ?>
+    <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-sm" role="status">
+        <div class="flex flex-wrap items-start gap-3">
+            <span class="inline-flex shrink-0 items-center rounded-full bg-amber-200 px-2.5 py-0.5 text-xs font-bold text-amber-900">
+                <?= (int) $pendingCount ?> pending
+            </span>
+            <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-amber-950">
+                    <?= (int) $pendingCount === 1 ? '1 proposal awaits your review' : (int) $pendingCount . ' proposals await your review' ?>
+                </p>
+                <p class="mt-0.5 text-xs text-amber-800">
+                    Latest: <?= e($pendingProposals[0]['partner_name']) ?>
+                    · <?= e($pendingProposals[0]['campus']) ?>
+                    · submitted by <?= e($pendingProposals[0]['submitted_by']) ?>
+                </p>
+            </div>
+        </div>
+    </div>
+<?php else: ?>
+    <div class="mb-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600" role="status">
+        <i class="bi bi-inbox me-1 text-slate-400" aria-hidden="true"></i>
+        No new pending proposal submissions from satellite campuses.
+    </div>
 <?php endif; ?>
 
 <section class="mb-8">
@@ -117,13 +145,27 @@ renderDirectorDashboardHeader(
 <div class="grid gap-8 xl:grid-cols-2">
     <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="border-b border-slate-200 px-6 py-4">
-            <h2 class="text-lg font-semibold text-slate-900">Pending Approvals &amp; Rejections</h2>
-            <p class="text-sm text-slate-500">Incoming proposal submissions from satellite campuses.</p>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-900">Pending Approvals &amp; Rejections</h2>
+                    <p class="text-sm text-slate-500">Campus Admin submissions queued for director review.</p>
+                </div>
+                <?php if ($pendingCount === 0): ?>
+                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">Queue empty</span>
+                <?php else: ?>
+                    <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800"><?= (int) $pendingCount ?> in queue</span>
+                <?php endif; ?>
+            </div>
         </div>
 
         <div class="divide-y divide-slate-100">
             <?php if ($pendingProposals === []): ?>
-                <p class="px-6 py-10 text-sm italic text-slate-500">No pending proposals at this time.</p>
+                <div class="px-6 py-10 text-center">
+                    <p class="text-sm text-slate-500">No new pending proposal submissions from satellite campuses.</p>
+                    <p class="mt-2 text-xs text-slate-400">
+                        When a Campus Admin submits a proposal, it will appear here for approval or revision feedback.
+                    </p>
+                </div>
             <?php else: ?>
                 <?php foreach ($pendingProposals as $proposal): ?>
                     <article class="px-6 py-5">
@@ -133,6 +175,9 @@ renderDirectorDashboardHeader(
                                 <p class="mt-1 text-sm text-slate-500">
                                     <?= e($proposal['agreement_type']) ?> · <?= e($proposal['campus']) ?>
                                 </p>
+                                <?php if (($proposal['partnership_type'] ?? '') !== ''): ?>
+                                    <p class="mt-1 text-xs text-slate-500"><?= e($proposal['partnership_type']) ?></p>
+                                <?php endif; ?>
                                 <p class="mt-1 text-xs text-slate-400">
                                     Submitted <?= e($proposal['submitted_at']) ?> by <?= e($proposal['submitted_by']) ?>
                                 </p>
@@ -140,13 +185,17 @@ renderDirectorDashboardHeader(
                             <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">Pending Review</span>
                         </div>
 
+                        <p class="mt-3 text-xs text-slate-500">
+                            Approve or reject with feedback. This updates the review queue only — it does not register the partnership in the live database.
+                        </p>
+
                         <div class="mt-4 flex flex-wrap gap-3">
                             <form method="post" action="dashboard_director.php">
                                 <input type="hidden" name="action" value="approve_proposal">
                                 <input type="hidden" name="proposal_id" value="<?= (int) $proposal['id'] ?>">
                                 <button type="submit"
                                         class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                                    Approve
+                                    Approve for Registry Entry
                                 </button>
                             </form>
 
@@ -155,17 +204,17 @@ renderDirectorDashboardHeader(
                                 <input type="hidden" name="proposal_id" value="<?= (int) $proposal['id'] ?>">
                                 <div class="min-w-[220px] flex-1">
                                     <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                        Rejection comment (required)
+                                        Revision feedback (required to reject)
                                     </label>
                                     <input type="text"
                                            name="rejection_comment"
                                            required
-                                           placeholder="Provide mandatory feedback..."
+                                           placeholder="Explain what the campus must revise..."
                                            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20">
                                 </div>
                                 <button type="submit"
                                         class="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700">
-                                    Reject
+                                    Return for Revision
                                 </button>
                             </form>
                         </div>
@@ -178,11 +227,17 @@ renderDirectorDashboardHeader(
     <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="border-b border-slate-200 px-6 py-4">
             <h2 class="text-lg font-semibold text-slate-900">Active Partnership Entry Form</h2>
-            <p class="text-sm text-slate-500">Convert verified agreements into the live registry database.</p>
+            <p class="text-sm text-slate-500">
+                The only path to create official records in the live registry (<code class="text-xs">partner</code>, <code class="text-xs">agreement</code>, <code class="text-xs">contact</code> tables).
+            </p>
         </div>
 
         <form method="post" action="dashboard_director.php" enctype="multipart/form-data" class="space-y-4 px-6 py-5">
             <input type="hidden" name="action" value="register_agreement">
+
+            <div class="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                Submit this form after campus review is complete. Campus Admin proposal forms never write directly to the registry.
+            </div>
 
             <div>
                 <label for="partner_id" class="mb-1.5 block text-sm font-medium text-slate-700">Partner organisation</label>
@@ -196,7 +251,7 @@ renderDirectorDashboardHeader(
                     <?php endforeach; ?>
                 </select>
                 <?php if ($partners === []): ?>
-                    <p class="mt-2 text-xs text-amber-700">No partners exist yet. Add partner records in the database before registering agreements.</p>
+                    <p class="mt-2 text-xs text-amber-700">No partners exist yet. Partner records are created when you register an active partnership here.</p>
                 <?php endif; ?>
             </div>
 

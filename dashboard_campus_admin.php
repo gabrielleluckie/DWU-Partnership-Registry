@@ -23,16 +23,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'submit_proposal') {
-        $partnerName = trim((string) ($_POST['partner_legal_name'] ?? ''));
-        $submitterName = trim((string) ($_POST['submitter_name'] ?? $user['name']));
+        $partnerName = trim((string) ($_POST['partner_name'] ?? $_POST['partner_legal_name'] ?? ''));
+        $submitterName = trim((string) ($_POST['staff_name'] ?? $_POST['submitter_name'] ?? $user['name']));
 
         if ($partnerName === '' || $submitterName === '') {
-            setFlash('error', 'Partner legal name and submitter name are required before submission.');
+            setFlash('error', 'Partner legal name and staff name are required before submission.');
             redirect('dashboard_campus_admin.php?tab=submit');
         }
 
-        if (empty($_POST['declaration_confirm'])) {
-            setFlash('error', 'You must confirm the declaration before submitting to the Director.');
+        if (empty($_POST['staff_declaration_agree']) && empty($_POST['declaration_confirm'])) {
+            setFlash('error', 'You must confirm the staff declaration before submitting to the Director.');
             redirect('dashboard_campus_admin.php?tab=submit');
         }
 
@@ -55,89 +55,99 @@ renderCampusAdminDashboardHeader(
 ?>
 
 <?php if ($message = flashMessage('success')): ?>
-    <div class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+    <div class="alert alert-success alert-dismissible fade show mb-2 py-2" role="alert">
         <?= e($message) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 <?php endif; ?>
 
 <?php if ($message = flashMessage('error')): ?>
-    <div class="mb-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+    <div class="alert alert-danger alert-dismissible fade show mb-2 py-2" role="alert">
         <?= e($message) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 <?php endif; ?>
 
-<div class="mb-6 border-b border-slate-200">
-    <nav class="-mb-px flex gap-6" aria-label="Campus admin tabs">
-        <a href="?tab=submit"
-           class="<?= $activeTab === 'submit'
-               ? 'border-dwu-green text-dwu-green'
-               : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700' ?> whitespace-nowrap border-b-2 px-1 py-4 text-sm font-semibold">
-            Submit Proposal Form
-        </a>
-        <a href="?tab=review"
-           class="<?= $activeTab === 'review'
-               ? 'border-dwu-green text-dwu-green'
-               : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700' ?> whitespace-nowrap border-b-2 px-1 py-4 text-sm font-semibold">
-            Review Proposal Forms
-        </a>
-    </nav>
+<div class="app-subnav app-subnav-bleed">
+    <div class="container-fluid px-3 px-lg-4">
+        <ul class="nav nav-tabs campus-admin-tabs mb-0" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a href="?tab=submit"
+                   class="nav-link fw-semibold <?= $activeTab === 'submit' ? 'active' : '' ?>">
+                    <i class="bi bi-file-earmark-plus me-1"></i> Submit Proposal Form
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a href="?tab=review"
+                   class="nav-link fw-semibold <?= $activeTab === 'review' ? 'active' : '' ?>">
+                    <i class="bi bi-list-check me-1"></i> Review Proposal Forms
+                </a>
+            </li>
+        </ul>
+    </div>
 </div>
+
+<?php if ($activeTab === 'review'): ?>
+<div class="app-page-heading mb-3 d-none d-md-block">
+    <h1 class="h5 mb-1">Campus Admin Dashboard</h1>
+    <p class="text-secondary small mb-0">Submit and review proposed partnership agreements.</p>
+</div>
+<?php endif; ?>
 
 <?php if ($activeTab === 'submit'): ?>
     <?php require __DIR__ . '/includes/campus-intake-form.php'; ?>
+    <script src="<?= e(assetUrl('js/campus-intake-form.js')) ?>"></script>
 <?php else: ?>
-    <div class="grid gap-8 lg:grid-cols-2">
-        <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div class="border-b border-slate-200 px-6 py-4">
-                <h2 class="text-lg font-semibold text-emerald-800">Approved Proposals</h2>
-                <p class="text-sm text-slate-500">Proposals cleared by the Partnership Director.</p>
+    <div class="review-grid">
+        <section class="review-panel">
+            <div class="review-panel-header">
+                <h2>Approved Proposals</h2>
+                <p>Proposals cleared by the Partnership Director.</p>
             </div>
-            <div class="divide-y divide-slate-100">
+            <div class="review-panel-body">
                 <?php if ($approvedProposals === []): ?>
-                    <p class="px-6 py-8 text-sm italic text-slate-500">No approved proposals yet.</p>
+                    <p class="review-empty">No approved proposals yet.</p>
                 <?php else: ?>
                     <?php foreach ($approvedProposals as $proposal): ?>
-                        <article class="px-6 py-5">
-                            <div class="flex items-start justify-between gap-3">
+                        <article class="review-item">
+                            <div class="review-item-top">
                                 <div>
-                                    <h3 class="font-semibold text-slate-900"><?= e($proposal['partner_name']) ?></h3>
-                                    <p class="mt-1 text-sm text-slate-500"><?= e($proposal['agreement_type']) ?> · <?= e($proposal['campus']) ?></p>
+                                    <h3><?= e($proposal['partner_name']) ?></h3>
+                                    <p class="review-meta"><?= e($proposal['agreement_type']) ?> · <?= e($proposal['campus']) ?></p>
                                 </div>
-                                <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">Approved</span>
+                                <span class="badge-approved">Approved</span>
                             </div>
-                            <p class="mt-3 text-xs text-slate-400">Submitted <?= e($proposal['submitted_at']) ?> by <?= e($proposal['submitted_by']) ?></p>
+                            <p class="review-date">Submitted <?= e($proposal['submitted_at']) ?> by <?= e($proposal['submitted_by']) ?></p>
                         </article>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div class="border-b border-slate-200 px-6 py-4">
-                <h2 class="text-lg font-semibold text-rose-800">Rejected Proposals</h2>
-                <p class="text-sm text-slate-500">Returned submissions requiring revision.</p>
+        <section class="review-panel">
+            <div class="review-panel-header">
+                <h2>Rejected Proposals</h2>
+                <p>Returned submissions requiring revision.</p>
             </div>
-            <div class="divide-y divide-slate-100">
+            <div class="review-panel-body">
                 <?php if ($rejectedProposals === []): ?>
-                    <p class="px-6 py-8 text-sm italic text-slate-500">No rejected proposals.</p>
+                    <p class="review-empty">No rejected proposals.</p>
                 <?php else: ?>
                     <?php foreach ($rejectedProposals as $proposal): ?>
-                        <article class="px-6 py-5">
-                            <div class="flex items-start justify-between gap-3">
+                        <article class="review-item">
+                            <div class="review-item-top">
                                 <div>
-                                    <h3 class="font-semibold text-slate-900"><?= e($proposal['partner_name']) ?></h3>
-                                    <p class="mt-1 text-sm text-slate-500"><?= e($proposal['agreement_type']) ?> · <?= e($proposal['campus']) ?></p>
+                                    <h3><?= e($proposal['partner_name']) ?></h3>
+                                    <p class="review-meta"><?= e($proposal['agreement_type']) ?> · <?= e($proposal['campus']) ?></p>
                                 </div>
-                                <span class="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-800">Rejected</span>
+                                <span class="badge-rejected">Rejected</span>
                             </div>
                             <?php if ($proposal['rejection_comment'] !== ''): ?>
-                                <p class="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                                    <?= e($proposal['rejection_comment']) ?>
-                                </p>
+                                <p class="review-rejection-note"><?= e($proposal['rejection_comment']) ?></p>
                             <?php endif; ?>
                             <button type="button"
                                     onclick="alert('Edit & Resubmit workflow will open the proposal form for proposal #<?= (int) $proposal['id'] ?>.')"
-                                    class="mt-4 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                                    class="btn-review-action">
                                 Edit &amp; Resubmit
                             </button>
                         </article>
@@ -146,10 +156,6 @@ renderCampusAdminDashboardHeader(
             </div>
         </section>
     </div>
-<?php endif; ?>
-
-<?php if ($activeTab === 'submit'): ?>
-    <script src="<?= e(assetUrl('js/campus-intake-form.js')) ?>"></script>
 <?php endif; ?>
 
 <?php renderDirectorDashboardFooter(); ?>

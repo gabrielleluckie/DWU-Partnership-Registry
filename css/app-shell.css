@@ -1,0 +1,138 @@
+/**
+ * DWU PDMIS — Application shell (global dark institutional theme)
+ * #121826 page · #1E2B38 cards · #94A3B8 secondary text
+ */
+
+body.app-shell {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    --app-bg: #121826;
+    --app-card: #1e2b38;
+    --app-card-hover: #243444;
+    --app-input: #162030;
+    --app-teal: #1b393e;
+    --app-text: #ffffff;
+    --app-muted: #94a3b8;
+    --app-border: rgba(148, 163, 184, 0.15);
+    --app-border-strong: rgba(148, 163, 184, 0.25);
+    --app-accent: #0284c7;
+    --app-gold: #f8a51d;
+
+    background-color: var(--app-bg);
+    background-image:
+        radial-gradient(ellipse 80% 50% at 90% -10%, rgba(27, 57, 62, 0.55) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 10% 100%, rgba(27, 57, 62, 0.35) 0%, transparent 50%),
+        linear-gradient(180deg, var(--app-bg) 0%, #141d2b 100%);
+    color: var(--app-text);
+    min-height: 100vh;
+}
+
+body.app-shell main {
+    background: transparent;
+    color: var(--app-text);
+}
+
+/* Page heading block (optional, below navbar) */
+body.app-shell .app-page-heading h1 {
+    color: var(--app-text);
+    font-weight: 700;
+}
+
+body.app-shell .app-page-heading p {
+    color: var(--app-muted);
+}
+
+/* Dark content cards (executive / director body) */
+body.app-shell .app-card {
+    background: var(--app-card);
+    border: 1px solid var(--app-border);
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    color: var(--app-text);
+}
+
+body.app-shell .app-card-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--app-border);
+    background: rgba(27, 57, 62, 0.15);
+}
+
+body.app-shell .app-card-body {
+    padding: 1.25rem 1.5rem;
+}
+
+/* Flash alerts on dark shell */
+body.app-shell .alert-success {
+    background: rgba(5, 150, 105, 0.15);
+    border-color: rgba(5, 150, 105, 0.35);
+    color: #6ee7b7;
+}
+
+body.app-shell .alert-danger {
+    background: rgba(225, 29, 72, 0.12);
+    border-color: rgba(225, 29, 72, 0.35);
+    color: #fda4af;
+}
+
+/* Footer */
+body.app-shell .site-footer {
+    background: var(--app-bg);
+    border-top: 1px solid var(--app-border);
+    color: var(--app-muted);
+}
+
+body.app-shell .site-footer h3 {
+    color: var(--app-text);
+}
+
+body.app-shell .site-footer a {
+    color: #7dd3fc;
+}
+
+body.app-shell .site-footer a:hover {
+    color: var(--app-text);
+}
+
+/* Bootstrap nav-tabs on dark pages */
+body.app-shell .nav-tabs {
+    --bs-nav-tabs-border-color: var(--app-border);
+    --bs-nav-tabs-link-active-bg: transparent;
+    --bs-nav-tabs-link-active-color: var(--app-text);
+}
+
+body.app-shell .nav-tabs .nav-link {
+    color: var(--app-muted);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+
+body.app-shell .nav-tabs .nav-link:hover {
+    color: var(--app-text);
+    border-bottom-color: rgba(2, 132, 199, 0.4);
+}
+
+body.app-shell .nav-tabs .nav-link.active {
+    color: var(--app-text);
+    border-bottom-color: var(--app-accent);
+    font-weight: 600;
+}
+
+body.app-shell .form-control,
+body.app-shell .form-select {
+    background: var(--app-input);
+    border-color: var(--app-border-strong);
+    color: var(--app-text);
+}
+
+body.app-shell .form-control:focus,
+body.app-shell .form-select:focus {
+    background: var(--app-input);
+    border-color: var(--app-accent);
+    color: var(--app-text);
+    box-shadow: 0 0 0 0.2rem rgba(2, 132, 199, 0.2);
+}
+
+body.app-shell .table-dark {
+    --bs-table-bg: transparent;
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.04);
+}

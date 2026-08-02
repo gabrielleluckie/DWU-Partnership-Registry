@@ -1,0 +1,418 @@
+/**
+ * Campus Admin Dashboard — Dark Slate / Teal Theme
+ * Palette: #121826 (page) · #1E2B38 (cards) · #1B393E (teal accent) · #FFFFFF / #94A3B8 (text)
+ */
+
+body.app-shell {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    --ca-bg-primary: #121826;
+    --ca-bg-card: #1e2b38;
+    --ca-bg-card-hover: #243444;
+    --ca-bg-input: #162030;
+    --ca-teal: #1b393e;
+    --ca-text-primary: #ffffff;
+    --ca-text-secondary: #94a3b8;
+    --ca-border: rgba(148, 163, 184, 0.15);
+    --ca-border-strong: rgba(148, 163, 184, 0.25);
+    --ca-accent: #0284c7;
+
+    background-color: var(--ca-bg-primary);
+    background-image:
+        radial-gradient(ellipse 80% 50% at 90% -10%, rgba(27, 57, 62, 0.55) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 10% 100%, rgba(27, 57, 62, 0.35) 0%, transparent 50%),
+        linear-gradient(180deg, var(--ca-bg-primary) 0%, #141d2b 100%);
+    color: var(--ca-text-primary);
+}
+
+body.app-shell main {
+    background: transparent;
+    color: var(--ca-text-primary);
+}
+
+/* ── Tabs (subnav inherits base styles from director-header.css) ── */
+body.app-shell .app-subnav .campus-admin-tabs {
+    border: none;
+}
+
+/* ── Flash alerts ── */
+body.app-shell .alert-success {
+    background: rgba(5, 150, 105, 0.15);
+    border-color: rgba(5, 150, 105, 0.35);
+    color: #6ee7b7;
+}
+
+body.app-shell .alert-danger {
+    background: rgba(225, 29, 72, 0.12);
+    border-color: rgba(225, 29, 72, 0.35);
+    color: #fda4af;
+}
+
+/* ── Review tab cards ── */
+body.app-shell .review-panel {
+    background: var(--ca-bg-card);
+    border: 1px solid var(--ca-border);
+    border-radius: 1rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+
+body.app-shell .review-panel-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--ca-border);
+    background: rgba(27, 57, 62, 0.2);
+}
+
+body.app-shell .review-panel-header h2 {
+    color: var(--ca-text-primary);
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+body.app-shell .review-panel-header p {
+    color: var(--ca-text-secondary);
+    font-size: 0.8125rem;
+    margin: 0.25rem 0 0;
+}
+
+body.app-shell .review-panel-body {
+    /* item borders handled per .review-item */
+}
+
+body.app-shell .review-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+@media (min-width: 992px) {
+    body.app-shell .review-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+body.app-shell .review-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+body.app-shell .review-item {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--ca-border);
+}
+
+body.app-shell .review-item:last-child {
+    border-bottom: none;
+}
+
+body.app-shell .review-item h3 {
+    color: var(--ca-text-primary);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    margin: 0;
+}
+
+body.app-shell .review-item .review-meta {
+    color: var(--ca-text-secondary);
+    font-size: 0.8125rem;
+    margin-top: 0.25rem;
+}
+
+body.app-shell .review-item .review-date {
+    color: rgba(148, 163, 184, 0.7);
+    font-size: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+body.app-shell .badge-approved {
+    background: rgba(5, 150, 105, 0.2);
+    color: #6ee7b7;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+}
+
+body.app-shell .badge-rejected {
+    background: rgba(225, 29, 72, 0.15);
+    color: #fda4af;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+}
+
+body.app-shell .review-rejection-note {
+    background: rgba(225, 29, 72, 0.1);
+    border: 1px solid rgba(225, 29, 72, 0.2);
+    color: #fda4af;
+    border-radius: 0.5rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.8125rem;
+    margin-top: 0.75rem;
+}
+
+body.app-shell .btn-review-action {
+    background: transparent;
+    border: 1px solid var(--ca-border-strong);
+    color: var(--ca-text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.45rem 0.85rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+body.app-shell .btn-review-action:hover {
+    background: var(--ca-bg-card-hover);
+    color: var(--ca-text-primary);
+    border-color: var(--ca-accent);
+}
+
+body.app-shell .review-empty {
+    color: var(--ca-text-secondary);
+    font-style: italic;
+    padding: 2rem 1.5rem;
+    font-size: 0.875rem;
+}
+
+/* ── Partnership form shell (submit tab) ── */
+body.app-shell .partnership-form-shell {
+    background: transparent;
+    color: var(--ca-text-primary);
+}
+
+body.app-shell .partnership-stepper-card {
+    background: var(--ca-bg-card);
+    border: 1px solid var(--ca-border);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+body.app-shell #partnership-scrollspy .nav-link {
+    color: var(--ca-text-secondary);
+}
+
+body.app-shell #partnership-scrollspy .nav-link:hover {
+    background: rgba(2, 132, 199, 0.1);
+    color: var(--ca-text-primary);
+}
+
+body.app-shell #partnership-scrollspy .nav-link.active {
+    background: rgba(2, 132, 199, 0.15);
+    color: #7dd3fc;
+    border-left-color: var(--ca-accent);
+}
+
+body.app-shell .partnership-form-shell .form-section {
+    background: var(--ca-bg-card);
+    border: 1px solid var(--ca-border) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+body.app-shell .partnership-form-shell .form-section:hover {
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.28);
+    border-color: var(--ca-border-strong) !important;
+}
+
+body.app-shell .section-header-band {
+    border-bottom-color: var(--ca-border);
+}
+
+body.app-shell .section-header-title {
+    color: var(--ca-text-primary);
+}
+
+body.app-shell .section-header-subtitle {
+    color: var(--ca-text-secondary);
+}
+
+body.app-shell .section-header-icon {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(27, 57, 62, 0.5));
+    color: #7dd3fc;
+}
+
+body.app-shell .partnership-form-shell .form-label,
+body.app-shell .partnership-form-shell .form-check-label {
+    color: var(--ca-text-secondary) !important;
+}
+
+body.app-shell .partnership-form-shell .form-control,
+body.app-shell .partnership-form-shell .form-select {
+    background: var(--ca-bg-input);
+    border-color: var(--ca-border-strong);
+    color: var(--ca-text-primary);
+}
+
+body.app-shell .partnership-form-shell .form-control::placeholder {
+    color: rgba(148, 163, 184, 0.55);
+}
+
+body.app-shell .partnership-form-shell .form-control:focus,
+body.app-shell .partnership-form-shell .form-select:focus {
+    background: var(--ca-bg-input);
+    border-color: var(--ca-accent);
+    color: var(--ca-text-primary);
+    box-shadow: 0 0 0 0.2rem rgba(2, 132, 199, 0.2);
+}
+
+body.app-shell .partnership-form-shell .form-control:read-only,
+body.app-shell .partnership-form-shell .form-control:disabled {
+    background: rgba(22, 32, 48, 0.8);
+    color: var(--ca-text-secondary);
+}
+
+body.app-shell .partnership-form-shell .form-text,
+body.app-shell .partnership-form-shell .text-muted {
+    color: var(--ca-text-secondary) !important;
+}
+
+body.app-shell .partnership-form-shell .bg-light {
+    background: rgba(22, 32, 48, 0.6) !important;
+    border-color: var(--ca-border) !important;
+}
+
+body.app-shell .partnership-form-shell .border {
+    border-color: var(--ca-border) !important;
+}
+
+body.app-shell .selection-tile {
+    background: var(--ca-bg-input) !important;
+    border-color: var(--ca-border-strong) !important;
+    color: var(--ca-text-secondary) !important;
+}
+
+body.app-shell .selection-tile:hover {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: rgba(2, 132, 199, 0.45) !important;
+    color: #7dd3fc !important;
+}
+
+body.app-shell .btn-check:checked + .selection-tile {
+    background: rgba(2, 132, 199, 0.15) !important;
+    border-color: var(--ca-accent) !important;
+    color: #7dd3fc !important;
+}
+
+body.app-shell .drop-zone {
+    background: rgba(22, 32, 48, 0.5) !important;
+    border-color: var(--ca-border-strong) !important;
+}
+
+body.app-shell .drop-zone:hover,
+body.app-shell .drop-zone.is-dragover {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: var(--ca-accent) !important;
+}
+
+body.app-shell .drop-zone .text-dark {
+    color: var(--ca-text-primary) !important;
+}
+
+body.app-shell .admin-comment-card {
+    background: linear-gradient(160deg, rgba(2, 132, 199, 0.12) 0%, var(--ca-bg-card) 60%);
+    border-color: rgba(2, 132, 199, 0.35);
+}
+
+body.app-shell .admin-comment-card h3 {
+    color: var(--ca-text-primary);
+}
+
+body.app-shell .director-review-card {
+    background: rgba(22, 32, 48, 0.7);
+    border-color: var(--ca-border);
+}
+
+body.app-shell .director-review-card h3 {
+    color: var(--ca-text-primary);
+}
+
+body.app-shell .partnership-form-banner,
+body.app-shell .partnership-navbar {
+    border-color: rgba(248, 165, 29, 0.15);
+}
+
+body.app-shell .partnership-instruction-bar {
+    background: rgba(11, 37, 25, 0.95) !important;
+    border-color: rgba(248, 165, 29, 0.12) !important;
+}
+
+body.app-shell .partnership-action-bar {
+    background: rgba(30, 43, 56, 0.95);
+    border-color: var(--ca-border);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
+}
+
+body.app-shell main.campus-admin-main {
+    max-width: 96rem;
+}
+
+body.app-shell .partnership-action-bar .btn-outline-secondary {
+    border-color: var(--ca-border-strong);
+    color: var(--ca-text-secondary);
+}
+
+body.app-shell .partnership-action-bar .btn-outline-secondary:hover {
+    background: var(--ca-bg-card-hover);
+    color: var(--ca-text-primary);
+    border-color: var(--ca-text-secondary);
+}
+
+body.app-shell .partnership-form-shell .form-check {
+    border-color: var(--ca-border) !important;
+}
+
+body.app-shell .partnership-form-shell .bg-white {
+    background: var(--ca-bg-input) !important;
+}
+
+body.app-shell .partnership-form-shell h6.text-secondary {
+    color: var(--ca-text-secondary) !important;
+}
+
+/* ── Site footer blend ── */
+body.app-shell .site-footer {
+    background: var(--ca-bg-primary);
+    border-top: 1px solid var(--ca-border);
+    color: var(--ca-text-secondary);
+}
+
+body.app-shell .site-footer h3 {
+    color: var(--ca-text-primary);
+}
+
+body.app-shell .site-footer a {
+    color: #7dd3fc;
+}
+
+body.app-shell .site-footer a:hover {
+    color: var(--ca-text-primary);
+}
+
+/* Override Bootstrap nav-tabs defaults on dark page */
+body.app-shell .nav-tabs {
+    --bs-nav-tabs-border-color: var(--ca-border);
+    --bs-nav-tabs-link-active-bg: transparent;
+    --bs-nav-tabs-link-active-color: var(--ca-text-primary);
+    --bs-nav-tabs-link-active-border-color: transparent transparent var(--ca-accent);
+}
+
+body.app-shell .nav-tabs .nav-link {
+    color: var(--ca-text-secondary);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+
+body.app-shell .nav-tabs .nav-link:hover {
+    color: var(--ca-text-primary);
+    border-color: transparent transparent rgba(2, 132, 199, 0.4);
+    isolation: isolate;
+}
+
+body.app-shell .nav-tabs .nav-link.active {
+    color: var(--ca-text-primary);
+    background: transparent;
+    border-color: transparent transparent var(--ca-accent);
+    font-weight: 600;
+}

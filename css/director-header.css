@@ -1,158 +1,195 @@
-/* Director dashboard header — matches DWU institutional layout */
+/* Global Bootstrap navbar — DWU PDMIS application shell */
 
 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap');
 
-.director-site-header {
-    position: sticky;
-    top: 0;
-    z-index: 300;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 80px;
-    padding: 0 24px 0 12px;
-    background-color: #00684d;
-    background-image:
-        radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.06) 0%, transparent 35%),
-        radial-gradient(circle at 15% 80%, rgba(0, 0, 0, 0.08) 0%, transparent 40%);
-    border-top: 3px solid #3366cc;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+.app-global-header {
+    z-index: 1030;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.22);
 }
 
-.director-header-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
+.app-navbar {
+    background: linear-gradient(135deg, #0b2519 0%, #006837 55%, #0f2e23 100%);
+    border-bottom: 2px solid rgba(248, 165, 29, 0.35);
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
 }
 
-.director-header-logo {
-    height: 68px;
-    width: auto;
+.app-navbar-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
     flex-shrink: 0;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
+    transition: transform 0.2s ease;
 }
 
-.director-header-brand-text {
-    color: #fff;
-    min-width: 0;
+.app-navbar-brand:hover .app-navbar-logo {
+    transform: scale(1.03);
 }
 
-.director-header-slogan {
-    font-size: 11px;
+.app-brand-slogan {
+    font-size: 0.6rem;
     font-weight: 700;
-    letter-spacing: 0.4px;
-    line-height: 1.3;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    white-space: nowrap;
+    color: rgba(255, 255, 255, 0.82);
+    line-height: 1.35;
 }
 
-.director-header-title {
+.app-brand-title {
     font-family: 'Dancing Script', cursive;
-    font-size: 28px;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #fff;
     line-height: 1.1;
-    margin-top: 2px;
+    margin-top: 0.05rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.app-brand-division {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.72);
+    margin-top: 0.1rem;
+    letter-spacing: 0.03em;
+}
+
+.app-navbar-toggler {
+    padding: 0.35rem 0.55rem;
+    border: 1px solid rgba(248, 165, 29, 0.45) !important;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+
+.app-navbar-toggler:hover,
+.app-navbar-toggler:focus {
+    border-color: #f8a51d !important;
+    background: rgba(248, 165, 29, 0.12);
+    box-shadow: 0 0 0 0.2rem rgba(248, 165, 29, 0.18);
+}
+
+.app-navbar-toggler:active {
+    transform: scale(0.96);
+}
+
+.app-nav-action {
+    color: rgba(255, 255, 255, 0.8) !important;
+    text-decoration: none;
+    border-radius: 0.5rem;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.app-nav-action:hover,
+.app-nav-action:focus {
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.app-notify-badge {
+    font-size: 0.6rem;
+    min-width: 1.1rem;
+    border: 2px solid #006837;
+}
+
+.app-user-name {
+    color: #7ec8e3;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.director-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    flex-shrink: 0;
-}
-
-.director-header-icon-btn {
-    position: relative;
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.65);
-    cursor: pointer;
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.15s ease;
-}
-
-.director-header-icon-btn:hover {
-    color: #fff;
-}
-
-.director-header-icon-btn svg {
-    width: 20px;
-    height: 20px;
-}
-
-.director-notification-badge {
-    position: absolute;
-    top: -2px;
-    right: -4px;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    border-radius: 999px;
-    background: #dc3545;
-    color: #fff;
-    font-size: 10px;
-    font-weight: 700;
-    line-height: 18px;
-    text-align: center;
-    border: 2px solid #00684d;
-}
-
-.director-user-menu {
-    position: relative;
-}
-
-.director-user-trigger {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-}
-
-.director-user-name {
-    color: #5dade2;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-}
-
-.director-user-chevron {
-    width: 12px;
-    height: 12px;
-    color: rgba(255, 255, 255, 0.75);
-    transition: transform 0.15s ease;
-}
-
-.director-user-menu.open .director-user-chevron {
-    transform: rotate(180deg);
-}
-
-.director-user-avatar {
-    width: 52px;
-    height: 52px;
+.app-user-avatar {
     object-fit: cover;
-    border: 2px solid rgba(255, 255, 255, 0.85);
+    border: 2px solid rgba(248, 165, 29, 0.75);
     background: #006633;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+.app-user-trigger:hover .app-user-avatar {
+    border-color: #f8a51d;
+}
+
+/* Sub-navigation strip (dashboard tabs) */
+.app-subnav {
+    background: #121826;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.app-subnav .nav-tabs {
+    border-bottom: none;
+    gap: 0.25rem;
+}
+
+.app-subnav .nav-link {
+    color: #94a3b8;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    border-radius: 0;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.app-subnav .nav-link:hover {
+    color: #fff;
+    border-bottom-color: rgba(248, 165, 29, 0.45) !important;
+    background: transparent;
+}
+
+.app-subnav .nav-link.active {
+    color: #fff;
+    background: transparent;
+    border-bottom-color: #0284c7 !important;
+}
+
+/* Full-bleed subnav when placed inside main container */
+.app-subnav-bleed {
+    margin-left: calc(-1 * var(--bs-gutter-x, 0.75rem));
+    margin-right: calc(-1 * var(--bs-gutter-x, 0.75rem));
+    margin-top: calc(-1 * var(--app-main-pt, 0.75rem));
+    margin-bottom: 0.75rem;
+    padding-left: calc(var(--bs-gutter-x, 0.75rem) * 0.5);
+    padding-right: calc(var(--bs-gutter-x, 0.75rem) * 0.5);
+}
+
+@media (min-width: 992px) {
+    body.app-shell main {
+        --app-main-pt: 1rem;
+    }
+}
+
+/* Notification alert bar */
+.app-notification-bar {
+    background: rgba(18, 24, 38, 0.97) !important;
+    border-top: 1px solid rgba(248, 165, 29, 0.12) !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1) !important;
+    color: #fff;
+    padding: 0.45rem 0;
+    backdrop-filter: blur(8px);
+}
+
+.app-notification-icon {
+    color: #f8a51d;
+    margin-top: 0.15rem;
+    filter: drop-shadow(0 0 6px rgba(248, 165, 29, 0.4));
+}
+
+/* Dropdown panels (preserved JS behaviour) */
 .director-dropdown-panel {
     display: none;
     position: absolute;
-    top: calc(100% + 12px);
+    top: calc(100% + 8px);
     right: 0;
     width: 320px;
-    background: #fff;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    background: #1e2b38;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 0.75rem;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
     overflow: hidden;
-    z-index: 400;
+    z-index: 1050;
 }
 
 .director-dropdown-panel.open {
@@ -170,30 +207,30 @@
 }
 
 .director-dropdown-header {
-    padding: 14px 16px;
-    background: #fafafa;
-    border-bottom: 1px solid #dee2e6;
-    font-size: 14px;
+    padding: 0.85rem 1rem;
+    background: rgba(27, 57, 62, 0.35);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    font-size: 0.875rem;
     font-weight: 600;
-    color: #004d26;
+    color: #fff;
 }
 
 .director-dropdown-body {
-    padding: 12px 16px;
+    padding: 0.85rem 1rem;
     max-height: 280px;
     overflow-y: auto;
 }
 
 .director-dropdown-footer {
-    padding: 12px 16px;
-    border-top: 1px solid #dee2e6;
-    background: #fafafa;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.15);
+    background: rgba(18, 24, 38, 0.5);
 }
 
 .director-notification-item {
-    padding: 10px 0;
-    border-bottom: 1px solid #f1f3f5;
-    font-size: 13px;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    font-size: 0.8125rem;
 }
 
 .director-notification-item:last-child {
@@ -202,31 +239,29 @@
 
 .director-notification-item strong {
     display: block;
-    color: #1a1a1a;
-    margin-bottom: 2px;
+    color: #fff;
+    margin-bottom: 0.15rem;
 }
 
 .director-notification-item span {
-    color: #6c757d;
-    font-size: 12px;
+    color: #94a3b8;
+    font-size: 0.75rem;
 }
 
 .director-form-label {
     display: block;
-    margin-bottom: 6px;
-    font-size: 12px;
+    margin-bottom: 0.35rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: #495057;
+    color: #94a3b8;
 }
 
 .director-form-select,
 .director-form-textarea {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    font-size: 14px;
-    margin-bottom: 12px;
+    margin-bottom: 0.75rem;
+    background: #162030;
+    border-color: rgba(148, 163, 184, 0.25);
+    color: #fff;
 }
 
 .director-form-textarea {
@@ -235,49 +270,43 @@
 }
 
 .director-btn-primary {
-    width: 100%;
-    padding: 10px 14px;
-    border: none;
-    border-radius: 6px;
-    background: #006633;
-    color: #fff;
-    font-size: 13px;
     font-weight: 600;
-    cursor: pointer;
-}
-
-.director-btn-primary:hover {
-    background: #004d26;
 }
 
 .director-user-dropdown-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 16px;
-    background: linear-gradient(135deg, #f8fbf9 0%, #eef6f1 100%);
-    border-bottom: 1px solid #dee2e6;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(27, 57, 62, 0.25);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.director-user-dropdown-header .director-user-avatar {
+    width: 48px;
+    height: 48px;
 }
 
 .director-user-dropdown-header h3 {
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 600;
-    color: #004d26;
+    color: #fff;
+    margin: 0;
 }
 
 .director-user-dropdown-header p {
-    font-size: 12px;
-    color: #6c757d;
-    margin-top: 2px;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin: 0.15rem 0 0;
 }
 
 .director-detail-row {
     display: flex;
     justify-content: space-between;
-    gap: 12px;
-    padding: 8px 0;
-    border-bottom: 1px solid #f1f3f5;
-    font-size: 12px;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    font-size: 0.75rem;
 }
 
 .director-detail-row:last-child {
@@ -285,51 +314,32 @@
 }
 
 .director-detail-label {
-    color: #6c757d;
+    color: #94a3b8;
 }
 
 .director-detail-value {
-    color: #1a1a1a;
+    color: #fff;
     font-weight: 600;
     text-align: right;
 }
 
 .director-signout-link {
-    display: block;
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    background: #fff;
-    color: #495057;
-    font-size: 12px;
-    font-weight: 600;
-    text-align: center;
     text-decoration: none;
 }
 
-.director-signout-link:hover {
-    background: #f1f3f5;
+@media (min-width: 992px) {
+    .app-navbar-logo {
+        width: 52px;
+        height: 52px;
+    }
+
+    .app-brand-title {
+        font-size: 1.65rem;
+    }
 }
 
-@media (max-width: 900px) {
-    .director-header-slogan {
-        font-size: 9px;
-    }
-
-    .director-header-title {
-        font-size: 22px;
-    }
-
-    .director-header-logo {
-        height: 54px;
-    }
-
-    .director-user-name {
-        display: none;
-    }
-
-    .director-site-header {
-        padding: 0 16px 0 8px;
+@media (max-width: 575.98px) {
+    .app-brand-text {
+        display: none !important;
     }
 }
