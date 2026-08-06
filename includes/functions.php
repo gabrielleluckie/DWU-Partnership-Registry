@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Models\Agreement;
+
 /**
  * Resolve registry table names (supports singular live schema and legacy plural names).
  *
@@ -80,41 +82,38 @@ function partnerHasSoftDelete(PDO $pdo): bool
 function badgeClass(string $status): string
 {
     return match ($status) {
-        'Active'         => 'active',
-        'Expired'        => 'expired',
-        'Soon to Expire' => 'soon',
-        default          => 'soon',
+        Agreement::STATUS_ACTIVE         => 'active',
+        Agreement::STATUS_EXPIRED        => 'expired',
+        Agreement::STATUS_EXPIRING_SOON => 'soon',
+        'Soon to Expire'                 => 'soon',
+        default                          => 'soon',
     };
 }
 
 function computeAgreementStatus(string $expiryDate): string
 {
-    $today = new DateTimeImmutable('today');
-    $expiry = new DateTimeImmutable($expiryDate);
-    $daysRemaining = (int) $today->diff($expiry)->format('%r%a');
-
-    if ($daysRemaining < 0) {
-        return 'Expired';
-    }
-
-    if ($daysRemaining <= 60) {
-        return 'Soon to Expire';
-    }
-
-    return 'Active';
+    return Agreement::calculatedStatusFromExpiry($expiryDate);
 }
 
 function resolveAgreementDisplayStatus(?string $expiryDate, ?string $dbStatus = null): string
 {
     if ($expiryDate !== null && $expiryDate !== '') {
-        return computeAgreementStatus($expiryDate);
+        return Agreement::calculatedStatusFromExpiry($expiryDate);
     }
 
     return match ($dbStatus) {
-        'Expired' => 'Expired',
-        'Active'  => 'Active',
-        default   => 'Active',
+        'Expired'        => Agreement::STATUS_EXPIRED,
+        'Expiring Soon'  => Agreement::STATUS_EXPIRING_SOON,
+        'Active'         => Agreement::STATUS_ACTIVE,
+        default          => Agreement::STATUS_ACTIVE,
     };
+}
+
+function enrichAgreementRow(array $row): array
+{
+    $model = Agreement::fromRow($row);
+
+    return array_merge($row, $model->toListingArray());
 }
 
 function campusTableName(PDO $pdo): string
@@ -203,7 +202,7 @@ function fetchAgreements(PDO $pdo): array
     $rows = $pdo->query($sql)->fetchAll();
 
     foreach ($rows as &$row) {
-        $row['status'] = resolveAgreementDisplayStatus($row['expiry'] ?? null, $row['status'] ?? null);
+        $row = enrichAgreementRow($row);
     }
     unset($row);
 
@@ -214,7 +213,7 @@ function fetchAgreementCounts(PDO $pdo): array
 {
     $counts = [
         'Active'         => 0,
-        'Soon to Expire' => 0,
+        'Expiring Soon'  => 0,
         'Expired'        => 0,
         'Total'          => 0,
     ];
@@ -266,11 +265,6 @@ function fetchFilteredAgreements(PDO $pdo, ?string $status = null, ?string $type
             WHERE 1 = 1";
     $params = [];
 
-    if ($status !== null && $status !== '' && $status !== 'ALL') {
-        $sql .= ' AND a.Status = :status';
-        $params['status'] = $status;
-    }
-
     if ($type !== null && $type !== '' && $type !== 'ALL') {
         $sql .= ' AND a.Agreement_Type = :type';
         $params['type'] = $type;
@@ -287,11 +281,16 @@ function fetchFilteredAgreements(PDO $pdo, ?string $status = null, ?string $type
     $stmt->execute($params);
     $rows = $stmt->fetchAll();
 
-    if ($status === null || $status === '' || $status === 'ALL') {
-        foreach ($rows as &$row) {
-            $row['status'] = resolveAgreementDisplayStatus($row['expiry'] ?? null, $row['status'] ?? null);
-        }
-        unset($row);
+    foreach ($rows as &$row) {
+        $row = enrichAgreementRow($row);
+    }
+    unset($row);
+
+    if ($status !== null && $status !== '' && $status !== 'ALL') {
+        $rows = array_values(array_filter(
+            $rows,
+            static fn(array $row): bool => ($row['status'] ?? '') === $status
+        ));
     }
 
     return $rows;

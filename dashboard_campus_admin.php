@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save_draft') {
         saveCampusProposalDraft($user, $_POST);
         setFlash('success', 'Draft saved successfully. You can continue editing at any time.');
-        redirect('dashboard_campus_admin.php?tab=submit');
+        redirect(routePath('dashboard/campus-admin') . '?tab=submit');
     }
 
     if ($action === 'submit_proposal') {
@@ -28,17 +28,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($partnerName === '' || $submitterName === '') {
             setFlash('error', 'Partner legal name and staff name are required before submission.');
-            redirect('dashboard_campus_admin.php?tab=submit');
+            redirect(routePath('dashboard/campus-admin') . '?tab=submit');
         }
 
         if (empty($_POST['staff_declaration_agree']) && empty($_POST['declaration_confirm'])) {
             setFlash('error', 'You must confirm the staff declaration before submitting to the Director.');
-            redirect('dashboard_campus_admin.php?tab=submit');
+            redirect(routePath('dashboard/campus-admin') . '?tab=submit');
         }
 
         $proposalId = createCampusProposal($_POST, $user, 'pending');
         setFlash('success', 'Proposal #' . $proposalId . ' has been submitted to the Partnership Director for review.');
-        redirect('dashboard_campus_admin.php?tab=review');
+        redirect(routePath('dashboard/campus-admin') . '?tab=review');
     }
 }
 

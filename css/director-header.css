@@ -94,10 +94,52 @@
     color: #7ec8e3;
     font-size: 0.8125rem;
     font-weight: 700;
-    max-width: 160px;
+    max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.app-user-role {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.app-user-nav-cluster {
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+    padding-left: 0.75rem;
+}
+
+.app-logout-btn {
+    color: #1a1a1a !important;
+    border: 1px solid rgba(248, 165, 29, 0.85);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    white-space: nowrap;
+}
+
+.app-logout-btn:hover {
+    background: #ffe08a;
+    border-color: #f8a51d;
+    color: #0b2519 !important;
+}
+
+.app-nav-back-link {
+    border-color: rgba(255, 255, 255, 0.55) !important;
+    color: #fff !important;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.app-nav-back-link:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: #f8a51d !important;
+    color: #fff !important;
 }
 
 .app-user-avatar {
@@ -335,6 +377,25 @@
 
     .app-brand-title {
         font-size: 1.65rem;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .app-user-nav-cluster {
+        flex-direction: column;
+        align-items: stretch !important;
+        width: 100%;
+        border-left: none;
+        padding-left: 0;
+        padding-top: 0.75rem;
+        margin-top: 0.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .app-user-summary {
+        display: block !important;
+        text-align: left !important;
+        margin-bottom: 0.35rem;
     }
 }
 

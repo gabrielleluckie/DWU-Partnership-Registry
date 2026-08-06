@@ -11,7 +11,7 @@ require_once __DIR__ . '/includes/guard.php';
 require_once __DIR__ . '/includes/dev-auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    redirect('index.php');
+    redirect(loginRoute());
 }
 
 if (!isDevAuthEnabled()) {

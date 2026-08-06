@@ -7,7 +7,7 @@ require_once __DIR__ . '/includes/guard.php';
 $loggedInUser = requireAuth($pdo);
 
 if ($loggedInUser['role'] === ROLE_CAMPUS_ADMIN) {
-    redirect('dashboard_campus_admin.php?tab=submit');
+    redirect(routePath('dashboard/campus-admin') . '?tab=submit');
 }
 
 $dashboard = dashboardForRole($loggedInUser['role']);

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dev Quick-Login panel — included on index.php when APP_ENV=local.
+ * Dev Quick-Login panel — included on login.php when APP_ENV=local.
  *
  * Expected: devQuickLoginAccounts(), dashboardForRole(), e()
  */
@@ -27,7 +27,7 @@ $devAccounts = devQuickLoginAccounts();
 
     <div class="grid gap-2">
         <?php foreach ($devAccounts as $account): ?>
-            <form method="post" action="index.php" class="m-0">
+            <form method="post" action="<?= e(loginRoute()) ?>" class="m-0">
                 <input type="hidden" name="dev_quick_login" value="1">
                 <input type="hidden" name="email" value="<?= e($account['email']) ?>">
                 <button type="submit"

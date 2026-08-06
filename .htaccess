@@ -1,0 +1,15 @@
+RewriteEngine On
+
+# Serve existing files and directories as-is.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Canonical auth routes
+RewriteRule ^login/?$ login.php [L,QSA]
+RewriteRule ^logout/?$ logout.php [L,QSA]
+
+# Role-based dashboard routes
+RewriteRule ^dashboard/campus-admin/?$ dashboard/campus-admin.php [L,QSA]
+RewriteRule ^dashboard/director/?$ dashboard/director.php [L,QSA]
+RewriteRule ^dashboard/registry/?$ dashboard/registry.php [L,QSA]

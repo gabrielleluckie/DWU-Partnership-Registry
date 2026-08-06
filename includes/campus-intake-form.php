@@ -150,7 +150,7 @@ $renderSectionHeader = static function (string $letter, string $title, string $s
     <!-- Main form column -->
     <div class="col-lg-10 col-xl-10">
         <form id="partnershipForm"
-              action="dashboard_campus_admin.php?tab=submit"
+              action="<?= e(routePath('dashboard/campus-admin') . '?tab=submit') ?>"
               method="post"
               enctype="multipart/form-data"
               novalidate>

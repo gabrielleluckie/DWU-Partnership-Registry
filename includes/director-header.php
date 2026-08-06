@@ -26,6 +26,7 @@ $extraStylesheets = $extraStylesheets ?? [];
 
 $showNotificationBar = $notifications !== [];
 $primaryNotice = $notifications[0] ?? null;
+$logoutUrl = logoutRoute();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -59,7 +60,7 @@ $primaryNotice = $notifications[0] ?? null;
 
             <!-- Brand -->
             <a class="navbar-brand app-navbar-brand d-flex align-items-center gap-3 me-lg-4"
-               href="<?= e(dashboardForRole($user['role'] ?? '') ?? 'index.php') ?>">
+               href="<?= e(dashboardForRole($user['role'] ?? '') ?? loginRoute()) ?>">
                 <img src="<?= e($logoUrl) ?>"
                      alt="Divine Word University"
                      class="app-navbar-logo">
@@ -83,7 +84,7 @@ $primaryNotice = $notifications[0] ?? null;
 
             <!-- Collapsible actions -->
             <div class="collapse navbar-collapse" id="appNavbarCollapse">
-                <div class="navbar-nav ms-lg-auto align-items-lg-center gap-lg-1 py-2 py-lg-0 w-100 w-lg-auto">
+                <div class="navbar-nav ms-lg-auto align-items-lg-center gap-lg-2 py-2 py-lg-0 w-100 w-lg-auto">
 
                     <!-- Page context (visible on mobile in collapse) -->
                     <div class="app-nav-page-context d-lg-none mb-3 pb-3 border-bottom border-secondary border-opacity-25">
@@ -166,46 +167,64 @@ $primaryNotice = $notifications[0] ?? null;
                         </div>
                     </div>
 
-                    <!-- User menu -->
-                    <div class="nav-item position-relative" id="directorUserMenu">
-                        <button type="button"
-                                id="directorUserBtn"
-                                class="btn btn-link nav-link app-nav-action app-user-trigger d-flex align-items-center gap-2 px-2 py-1"
-                                aria-expanded="false"
-                                aria-haspopup="true">
-                            <span class="app-user-name d-none d-xl-inline"><?= e($user['display_name'] ?? strtoupper($user['name'])) ?></span>
-                            <img class="app-user-avatar rounded-circle"
-                                 src="<?= e($user['avatar']) ?>"
-                                 alt="<?= e($user['name']) ?>"
-                                 width="40" height="40">
-                            <i class="bi bi-chevron-down small opacity-75 d-none d-lg-inline"></i>
-                        </button>
-                        <div class="director-dropdown-panel" id="directorUserPanel" role="menu">
-                            <div class="director-user-dropdown-header">
-                                <img class="director-user-avatar rounded-circle" src="<?= e($user['avatar']) ?>" alt="">
-                                <div>
-                                    <h3><?= e($user['name']) ?></h3>
-                                    <p><?= e($user['role']) ?></p>
+                    <!-- User profile + logout -->
+                    <div class="nav-item d-flex align-items-center gap-2 ms-lg-2 app-user-nav-cluster">
+                        <div class="app-user-summary d-none d-lg-block text-end">
+                            <span class="app-user-name d-block"><?= e($user['display_name'] ?? strtoupper($user['name'])) ?></span>
+                            <span class="app-user-role d-block"><?= e($user['role']) ?></span>
+                        </div>
+
+                        <div class="position-relative" id="directorUserMenu">
+                            <button type="button"
+                                    id="directorUserBtn"
+                                    class="btn btn-link nav-link app-nav-action app-user-trigger d-flex align-items-center gap-2 px-2 py-1"
+                                    aria-expanded="false"
+                                    aria-haspopup="true">
+                                <img class="app-user-avatar rounded-circle"
+                                     src="<?= e($user['avatar']) ?>"
+                                     alt="<?= e($user['name']) ?>"
+                                     width="40" height="40">
+                                <i class="bi bi-chevron-down small opacity-75 d-none d-lg-inline"></i>
+                            </button>
+                            <div class="director-dropdown-panel" id="directorUserPanel" role="menu">
+                                <div class="director-user-dropdown-header">
+                                    <img class="director-user-avatar rounded-circle" src="<?= e($user['avatar']) ?>" alt="">
+                                    <div>
+                                        <h3><?= e($user['name']) ?></h3>
+                                        <p><?= e($user['role']) ?></p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="director-dropdown-body">
-                                <div class="director-detail-row">
-                                    <span class="director-detail-label">Staff ID</span>
-                                    <span class="director-detail-value"><?= e($user['staff_id']) ?></span>
+                                <div class="director-dropdown-body">
+                                    <div class="director-detail-row">
+                                        <span class="director-detail-label">Staff ID</span>
+                                        <span class="director-detail-value"><?= e($user['staff_id']) ?></span>
+                                    </div>
+                                    <div class="director-detail-row">
+                                        <span class="director-detail-label">Email</span>
+                                        <span class="director-detail-value"><?= e($user['email']) ?></span>
+                                    </div>
+                                    <div class="director-detail-row">
+                                        <span class="director-detail-label">Campus</span>
+                                        <span class="director-detail-value"><?= e($user['campus']) ?></span>
+                                    </div>
                                 </div>
-                                <div class="director-detail-row">
-                                    <span class="director-detail-label">Email</span>
-                                    <span class="director-detail-value"><?= e($user['email']) ?></span>
+                                <div class="director-dropdown-footer">
+                                    <a href="<?= e($logoutUrl) ?>" class="director-signout-link btn btn-danger btn-sm w-100">
+                                        <i class="bi bi-box-arrow-right me-1"></i> Logout
+                                    </a>
                                 </div>
-                                <div class="director-detail-row">
-                                    <span class="director-detail-label">Campus</span>
-                                    <span class="director-detail-value"><?= e($user['campus']) ?></span>
-                                </div>
-                            </div>
-                            <div class="director-dropdown-footer">
-                                <a href="logout.php" class="director-signout-link btn btn-outline-secondary btn-sm w-100">Sign Out</a>
                             </div>
                         </div>
+
+                        <a href="<?= e($logoutUrl) ?>"
+                           class="btn btn-sm btn-warning fw-semibold app-logout-btn d-none d-lg-inline-flex align-items-center">
+                            <i class="bi bi-box-arrow-right me-1"></i> Logout
+                        </a>
+
+                        <a href="<?= e($logoutUrl) ?>"
+                           class="btn btn-sm btn-warning fw-semibold app-logout-btn d-lg-none w-100 mt-2">
+                            <i class="bi bi-box-arrow-right me-1"></i> Logout
+                        </a>
                     </div>
                 </div>
             </div>

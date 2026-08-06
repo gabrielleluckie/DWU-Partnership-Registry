@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             setFlash('error', 'Unable to approve the selected proposal.');
         }
 
-        redirect('dashboard_director.php');
+        redirect(routePath('dashboard/director'));
     }
 
     if ($action === 'reject_proposal') {
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($comment === '') {
             setFlash('error', 'A rejection comment is required.');
-            redirect('dashboard_director.php');
+            redirect(routePath('dashboard/director'));
         }
 
         if (updateProposalStatus($proposalId, 'rejected', $comment)) {
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             setFlash('error', 'Unable to reject the selected proposal.');
         }
 
-        redirect('dashboard_director.php');
+        redirect(routePath('dashboard/director'));
     }
 
     if ($action === 'register_agreement') {
@@ -50,12 +50,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($partnerId <= 0 || $partnershipType === '' || $agreementType === '' || $signedDate === '' || $expiryDate === '') {
             setFlash('error', 'All agreement fields are required.');
-            redirect('dashboard_director.php');
+            redirect(routePath('dashboard/director'));
         }
 
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $signedDate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $expiryDate)) {
             setFlash('error', 'Dates must be provided in YYYY-MM-DD format.');
-            redirect('dashboard_director.php');
+            redirect(routePath('dashboard/director'));
         }
 
         if (isset($_FILES['agreement_pdf']) && $_FILES['agreement_pdf']['error'] === UPLOAD_ERR_OK) {
@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             setFlash('error', $exception->getMessage());
         }
 
-        redirect('dashboard_director.php');
+        redirect(routePath('dashboard/director'));
     }
 }
 
@@ -138,7 +138,12 @@ renderDirectorDashboardHeader(
 <?php endif; ?>
 
 <section class="mb-8">
-    <h2 class="mb-4 text-lg font-semibold text-slate-900">Executive Analytics Overview</h2>
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+        <h2 class="h5 mb-0 text-slate-900">Executive Analytics Overview</h2>
+        <a href="<?= e(routePath('dashboard/registry')) ?>" class="btn btn-sm btn-outline-success">
+            <i class="bi bi-table me-1"></i> Open Registry Dashboard
+        </a>
+    </div>
     <?php renderMetricCards($counts); ?>
 </section>
 
@@ -190,7 +195,7 @@ renderDirectorDashboardHeader(
                         </p>
 
                         <div class="mt-4 flex flex-wrap gap-3">
-                            <form method="post" action="dashboard_director.php">
+                            <form method="post" action="">
                                 <input type="hidden" name="action" value="approve_proposal">
                                 <input type="hidden" name="proposal_id" value="<?= (int) $proposal['id'] ?>">
                                 <button type="submit"
@@ -199,7 +204,7 @@ renderDirectorDashboardHeader(
                                 </button>
                             </form>
 
-                            <form method="post" action="dashboard_director.php" class="flex flex-1 flex-wrap items-end gap-2">
+                            <form method="post" action="" class="flex flex-1 flex-wrap items-end gap-2">
                                 <input type="hidden" name="action" value="reject_proposal">
                                 <input type="hidden" name="proposal_id" value="<?= (int) $proposal['id'] ?>">
                                 <div class="min-w-[220px] flex-1">
@@ -232,7 +237,7 @@ renderDirectorDashboardHeader(
             </p>
         </div>
 
-        <form method="post" action="dashboard_director.php" enctype="multipart/form-data" class="space-y-4 px-6 py-5">
+        <form method="post" action="" enctype="multipart/form-data" class="space-y-4 px-6 py-5">
             <input type="hidden" name="action" value="register_agreement">
 
             <div class="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">

@@ -2,13 +2,31 @@
 
 declare(strict_types=1);
 
+use App\Models\Agreement;
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 require_once __DIR__ . '/database.php';
-require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/../config/app.php';
+
+spl_autoload_register(static function (string $class): void {
+    $prefix = 'App\\';
+
+    if (!str_starts_with($class, $prefix)) {
+        return;
+    }
+
+    $relative = str_replace('\\', '/', substr($class, strlen($prefix)));
+    $path = __DIR__ . '/../app/' . $relative . '.php';
+
+    if (is_file($path)) {
+        require_once $path;
+    }
+});
+
+require_once __DIR__ . '/functions.php';
 
 const ROLE_CAMPUS_ADMIN = 'Campus Admin';
 const ROLE_PRESIDENT = 'President';
@@ -41,15 +59,45 @@ function usersTableMeta(PDO $pdo): array
 
 function normalizeDbRole(string $role): string
 {
-    $normalized = strtolower(str_replace(' ', '_', trim($role)));
+    $normalized = roleSlug($role);
 
     return match ($normalized) {
         'campus_admin'         => ROLE_CAMPUS_ADMIN,
-        'partnership_director' => ROLE_PARTNERSHIP_DIRECTOR,
+        'partnership_director', 'director' => ROLE_PARTNERSHIP_DIRECTOR,
         'executive_officer'    => ROLE_EXECUTIVE_OFFICER,
         'president'            => ROLE_PRESIDENT,
         default                => $role,
     };
+}
+
+/** Normalize any role label to a lowercase slug (e.g. partnership_director). */
+function roleSlug(string $role): string
+{
+    return strtolower(str_replace([' ', '-'], '_', trim($role)));
+}
+
+/** Resolve the active role from the user profile or session store. */
+function resolveActiveUserRole(?array $user = null): string
+{
+    if ($user !== null && !empty($user['role'])) {
+        return (string) $user['role'];
+    }
+
+    if (!empty($_SESSION['user_role'])) {
+        return (string) $_SESSION['user_role'];
+    }
+
+    if (!empty($_SESSION['role'])) {
+        return (string) $_SESSION['role'];
+    }
+
+    return '';
+}
+
+function syncSessionRole(string $displayRole): void
+{
+    $_SESSION['user_role'] = normalizeDbRole($displayRole);
+    $_SESSION['role'] = roleSlug($_SESSION['user_role']);
 }
 
 function normalizeUserRow(array $user): array
@@ -81,19 +129,167 @@ function buildUserSelectSql(PDO $pdo, bool $includePassword = false): string
             LEFT JOIN `{$campusTable}` c ON u.Campus_ID = c.Campus_ID";
 }
 
+/** Application web-root path (e.g. /IS406_PartnershipRegistry). */
+function appBasePath(): string
+{
+    static $base = null;
+
+    if ($base !== null) {
+        return $base;
+    }
+
+    $documentRoot = realpath($_SERVER['DOCUMENT_ROOT'] ?? '');
+    $applicationRoot = realpath(dirname(__DIR__));
+
+    if (
+        is_string($documentRoot) && $documentRoot !== false
+        && is_string($applicationRoot) && $applicationRoot !== false
+    ) {
+        $documentRoot = str_replace('\\', '/', $documentRoot);
+        $applicationRoot = str_replace('\\', '/', $applicationRoot);
+
+        if (str_starts_with($applicationRoot, $documentRoot)) {
+            $base = substr($applicationRoot, strlen($documentRoot));
+            $base = rtrim($base, '/');
+
+            return $base === '' ? '' : $base;
+        }
+    }
+
+    $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+    $scriptDir = dirname($scriptName);
+
+    if (str_ends_with($scriptDir, '/dashboard')) {
+        $base = dirname($scriptDir);
+    } else {
+        $base = ($scriptDir === '/' || $scriptDir === '.') ? '' : $scriptDir;
+    }
+
+    $base = rtrim($base, '/');
+
+    return $base === '' ? '' : $base;
+}
+
+/** Build an absolute path from the application web root. */
+function appUrl(string $path = ''): string
+{
+    $base = appBasePath();
+    $path = ltrim(str_replace('\\', '/', $path), '/');
+
+    if ($base === '') {
+        return $path === '' ? '/' : '/' . $path;
+    }
+
+    return $path === '' ? $base : $base . '/' . $path;
+}
+
 function roleDashboardMap(): array
 {
     return [
-        ROLE_CAMPUS_ADMIN          => 'dashboard_campus_admin.php',
-        ROLE_PRESIDENT             => 'dashboard_executive.php',
-        ROLE_EXECUTIVE_OFFICER     => 'dashboard_executive.php',
-        ROLE_PARTNERSHIP_DIRECTOR  => 'dashboard_director.php',
+        ROLE_CAMPUS_ADMIN          => routePath('dashboard/campus-admin'),
+        ROLE_PRESIDENT             => routePath('dashboard/registry'),
+        ROLE_EXECUTIVE_OFFICER     => routePath('dashboard/registry'),
+        ROLE_PARTNERSHIP_DIRECTOR  => routePath('dashboard/director'),
     ];
+}
+
+/** Canonical login page path. */
+function loginRoute(): string
+{
+    return appUrl('login');
+}
+
+function logoutRoute(): string
+{
+    return appUrl('logout');
+}
+
+/** Build a dashboard or application route path. */
+function routePath(string $route): string
+{
+    return appUrl(ltrim($route, '/'));
 }
 
 function dashboardForRole(string $role): ?string
 {
-    return roleDashboardMap()[$role] ?? null;
+    $normalizedRole = normalizeDbRole($role);
+
+    return roleDashboardMap()[$normalizedRole] ?? null;
+}
+
+function isPartnershipDirectorRole(?string $role): bool
+{
+    if ($role === null || $role === '') {
+        return false;
+    }
+
+    return in_array(roleSlug($role), ['partnership_director', 'director'], true);
+}
+
+function isExecutiveRegistryHomeRole(?string $role): bool
+{
+    if ($role === null || $role === '') {
+        return false;
+    }
+
+    return in_array(roleSlug($role), ['president', 'executive_officer'], true);
+}
+
+function isRegistryDashboardRequest(): bool
+{
+    $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $uri = str_replace('\\', '/', (string) ($_SERVER['REQUEST_URI'] ?? ''));
+
+    return str_contains($script, 'registry_dashboard.php')
+        || str_contains($script, '/dashboard/registry')
+        || preg_match('#/dashboard/registry(?:\.php)?(?:\?|$)#', $uri) === 1;
+}
+
+function roleMatchesAllowed(string $role, array $allowedRoles): bool
+{
+    $roleSlug = roleSlug($role);
+    $directorSlugs = ['partnership_director', 'director'];
+
+    foreach ($allowedRoles as $allowedRole) {
+        $allowedSlug = roleSlug((string) $allowedRole);
+
+        if ($role === $allowedRole || $allowedSlug === $roleSlug) {
+            return true;
+        }
+
+        if (
+            in_array($roleSlug, $directorSlugs, true)
+            && in_array($allowedSlug, $directorSlugs, true)
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Optional back-navigation link for the global header.
+ *
+ * @return array{label: string, href: string}|null
+ */
+function registryHeaderBackLink(?array $user = null): ?array
+{
+    $activeRole = resolveActiveUserRole($user);
+    $directorDashboard = routePath('dashboard/director');
+
+    if (dashboardForRole($activeRole) !== $directorDashboard && !isPartnershipDirectorRole($activeRole)) {
+        return null;
+    }
+
+    if (isExecutiveRegistryHomeRole($activeRole)) {
+        return null;
+    }
+
+    return [
+        'label' => '← Back to Director Dashboard',
+        'href'  => $directorDashboard,
+    ];
 }
 
 function fetchUserById(PDO $pdo, int $userId): ?array
@@ -163,8 +359,11 @@ function currentUser(PDO $pdo): ?array
 function loginUser(array $user): void
 {
     session_regenerate_id(true);
+    $displayRole = normalizeDbRole((string) ($user['Role'] ?? $user['role'] ?? ''));
+
     $_SESSION['user_id'] = (int) $user['User_ID'];
-    $_SESSION['user_role'] = normalizeDbRole((string) $user['Role']);
+    $_SESSION['user_role'] = $displayRole;
+    $_SESSION['role'] = roleSlug($displayRole);
     $_SESSION['user_name'] = trim($user['First_name'] . ' ' . $user['Last_name']);
     $_SESSION['campus_id'] = isset($user['Campus_ID']) && $user['Campus_ID'] !== null && $user['Campus_ID'] !== ''
         ? (int) $user['Campus_ID']
@@ -193,13 +392,20 @@ function logoutUser(): void
 
 function redirect(string $location): never
 {
+    if (
+        !preg_match('#^https?://#i', $location)
+        && !str_starts_with($location, '/')
+    ) {
+        $location = appUrl($location);
+    }
+
     header('Location: ' . $location);
     exit;
 }
 
 function redirectWithError(string $error): never
 {
-    redirect('index.php?error=' . urlencode($error));
+    redirect(loginRoute() . '?error=' . urlencode($error));
 }
 
 function requireAuth(PDO $pdo): array
@@ -215,6 +421,8 @@ function requireAuth(PDO $pdo): array
         redirectWithError('Your session has expired. Please sign in again.');
     }
 
+    syncSessionRole((string) $user['role']);
+
     return $user;
 }
 
@@ -222,7 +430,7 @@ function requireRole(PDO $pdo, array $allowedRoles): array
 {
     $user = requireAuth($pdo);
 
-    if (!in_array($user['role'], $allowedRoles, true)) {
+    if (!roleMatchesAllowed((string) $user['role'], $allowedRoles)) {
         redirectWithError('You do not have permission to access that page.');
     }
 
@@ -231,7 +439,7 @@ function requireRole(PDO $pdo, array $allowedRoles): array
 
 function redirectToRoleDashboard(string $role): never
 {
-    $dashboard = dashboardForRole($role);
+    $dashboard = dashboardForRole(normalizeDbRole($role));
 
     if ($dashboard === null) {
         redirectWithError('No dashboard is configured for your role.');
@@ -247,14 +455,7 @@ function e(?string $value): string
 
 function assetUrl(string $path): string
 {
-    static $base = null;
-
-    if ($base === null) {
-        $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
-        $base = ($scriptDir === '/' || $scriptDir === '.') ? '' : $scriptDir;
-    }
-
-    return ($base !== '' ? $base . '/' : '') . ltrim($path, '/');
+    return appUrl(ltrim($path, '/'));
 }
 
 function flashMessage(string $key): ?string
@@ -426,9 +627,9 @@ function renderDashboardHeader(array $user, string $title, string $subtitle = ''
                         <p class="text-sm font-semibold text-slate-900"><?= e($user['name']) ?></p>
                         <p class="text-xs text-slate-500"><?= e($user['role']) ?> · <?= e($user['campus']) ?></p>
                     </div>
-                    <a href="logout.php"
+                    <a href="<?= e(logoutRoute()) ?>"
                        class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
-                        Sign Out
+                        Logout
                     </a>
                 </div>
             </div>
@@ -629,6 +830,7 @@ function renderExecutiveDashboardHeader(
         'notificationsHeading' => 'Registry Notifications',
         'messagePlaceholder'   => 'Type your message to Campus Admins, Partnership Director, or Executive staff...',
         'pageSubtitle'         => $pageSubtitle,
+        'extraStylesheets'     => [assetUrl('css/campus-admin-dashboard.css')],
     ]);
 }
 
@@ -647,10 +849,10 @@ function renderDirectorDashboardFooter(): void
 function statusBadgeClasses(string $status): string
 {
     return match ($status) {
-        'Active'         => 'bg-success bg-opacity-25 text-success',
-        'Expired'        => 'bg-danger bg-opacity-25 text-danger',
-        'Soon to Expire' => 'bg-warning bg-opacity-25 text-warning',
-        default          => 'bg-secondary bg-opacity-25 text-secondary',
+        'Active', Agreement::STATUS_ACTIVE         => 'bg-success',
+        'Expired', Agreement::STATUS_EXPIRED      => 'bg-danger',
+        'Expiring Soon', Agreement::STATUS_EXPIRING_SOON, 'Soon to Expire' => 'bg-warning text-dark',
+        default                                     => 'bg-secondary',
     };
 }
 
@@ -673,7 +875,7 @@ function renderMetricCards(array $counts): void
         <div class="col-sm-6 col-lg-3">
             <div class="app-card p-4 h-100">
                 <p class="small text-secondary mb-1">Expiring Soon</p>
-                <p class="h3 fw-bold mb-0 text-warning"><?= (int) $counts['Soon to Expire'] ?></p>
+                <p class="h3 fw-bold mb-0 text-warning"><?= (int) ($counts['Expiring Soon'] ?? $counts['Soon to Expire'] ?? 0) ?></p>
             </div>
         </div>
         <div class="col-sm-6 col-lg-3">
@@ -711,7 +913,7 @@ function legacyNavItems(string $role): array
     if ($role === ROLE_CAMPUS_ADMIN) {
         $items['intake'] = [
             'label' => 'Submit Proposal',
-            'href'  => 'dashboard_campus_admin.php',
+            'href'  => routePath('dashboard/campus-admin'),
             'icon'  => '<svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12H2"/><path d="M5 12V4h14v8"/><path d="M5 12v8h14v-8"/></svg>',
         ];
     }
