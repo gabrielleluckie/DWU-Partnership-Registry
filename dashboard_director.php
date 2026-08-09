@@ -42,44 +42,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'register_agreement') {
-        $partnerId = (int) ($_POST['partner_id'] ?? 0);
-        $partnershipType = trim($_POST['partnership_type'] ?? '');
-        $agreementType = trim($_POST['agreement_type'] ?? '');
-        $signedDate = trim($_POST['signed_date'] ?? '');
-        $expiryDate = trim($_POST['expiry_date'] ?? '');
-
-        if ($partnerId <= 0 || $partnershipType === '' || $agreementType === '' || $signedDate === '' || $expiryDate === '') {
-            setFlash('error', 'All agreement fields are required.');
-            redirect(routePath('dashboard/director'));
-        }
-
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $signedDate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $expiryDate)) {
-            setFlash('error', 'Dates must be provided in YYYY-MM-DD format.');
-            redirect(routePath('dashboard/director'));
-        }
-
-        if (isset($_FILES['agreement_pdf']) && $_FILES['agreement_pdf']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = __DIR__ . '/uploads/agreements';
-
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-
-            $safeName = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($_FILES['agreement_pdf']['name']));
-            $targetPath = $uploadDir . '/' . time() . '_' . $safeName;
-            move_uploaded_file($_FILES['agreement_pdf']['tmp_name'], $targetPath);
-        }
-
         try {
-            $agreementId = createAgreementWithHistory(
-                $pdo,
-                $partnerId,
-                $partnershipType,
-                $agreementType,
-                $signedDate,
-                $expiryDate,
-                $user['name']
-            );
+            $documentPath = storeUploadedAgreementPdf($_FILES['agreement_pdf'] ?? []);
+
+            $agreementId = registerActivePartnership($pdo, [
+                'partner_mode'        => (string) ($_POST['partner_mode'] ?? 'existing'),
+                'partner_id'          => (int) ($_POST['partner_id'] ?? 0),
+                'partner_name'        => trim((string) ($_POST['partner_name'] ?? '')),
+                'partner_country'     => trim((string) ($_POST['partner_country'] ?? '')),
+                'partner_address'     => trim((string) ($_POST['partner_address'] ?? '')),
+                'partner_website'     => trim((string) ($_POST['partner_website'] ?? '')),
+                'campus_id'           => (int) ($_POST['campus_id'] ?? 0),
+                'contact_name'        => trim((string) ($_POST['contact_name'] ?? '')),
+                'contact_designation' => trim((string) ($_POST['contact_designation'] ?? '')),
+                'contact_email'       => trim((string) ($_POST['contact_email'] ?? '')),
+                'contact_phone'       => trim((string) ($_POST['contact_phone'] ?? '')),
+                'contact_fax'         => trim((string) ($_POST['contact_fax'] ?? '')),
+                'partnership_type'    => trim((string) ($_POST['partnership_type'] ?? '')),
+                'agreement_type'      => trim((string) ($_POST['agreement_type'] ?? '')),
+                'signed_date'         => trim((string) ($_POST['signed_date'] ?? '')),
+                'expiry_date'         => trim((string) ($_POST['expiry_date'] ?? '')),
+                'scope_description'   => trim((string) ($_POST['scope_description'] ?? '')),
+                'document_path'       => $documentPath,
+            ], (int) $user['id'], $user['name']);
 
             setFlash('success', 'Agreement #' . $agreementId . ' registered successfully in the live registry.');
         } catch (Throwable $exception) {
@@ -94,6 +79,7 @@ $pendingProposals = getProposalsByStatus('pending');
 $pendingCount = count($pendingProposals);
 $counts = fetchAgreementCounts($pdo);
 $partners = fetchPartners($pdo);
+$campuses = fetchCampuses($pdo);
 
 renderDirectorDashboardHeader(
     $user,
@@ -101,7 +87,17 @@ renderDirectorDashboardHeader(
     $pendingProposals,
     $pendingCount
 );
+
+$logoutUrl = logoutRoute();
 ?>
+
+<div class="d-flex justify-content-end align-items-center mb-3">
+    <a href="<?= e($logoutUrl) ?>"
+       class="btn btn-sm btn-warning fw-semibold app-logout-btn d-inline-flex align-items-center gap-2">
+        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+        <span>Logout</span>
+    </a>
+</div>
 
 <?php if ($message = flashMessage('success')): ?>
     <div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><?= e($message) ?></div>
@@ -237,74 +233,7 @@ renderDirectorDashboardHeader(
             </p>
         </div>
 
-        <form method="post" action="" enctype="multipart/form-data" class="space-y-4 px-6 py-5">
-            <input type="hidden" name="action" value="register_agreement">
-
-            <div class="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-                Submit this form after campus review is complete. Campus Admin proposal forms never write directly to the registry.
-            </div>
-
-            <div>
-                <label for="partner_id" class="mb-1.5 block text-sm font-medium text-slate-700">Partner organisation</label>
-                <select id="partner_id" name="partner_id" required
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-dwu-green focus:outline-none focus:ring-2 focus:ring-dwu-green/20">
-                    <option value="">Select a registered partner...</option>
-                    <?php foreach ($partners as $partner): ?>
-                        <option value="<?= (int) $partner['Partner_ID'] ?>">
-                            <?= e($partner['Name']) ?> (<?= e($partner['campus_name']) ?>)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <?php if ($partners === []): ?>
-                    <p class="mt-2 text-xs text-amber-700">No partners exist yet. Partner records are created when you register an active partnership here.</p>
-                <?php endif; ?>
-            </div>
-
-            <div>
-                <label for="partnership_type" class="mb-1.5 block text-sm font-medium text-slate-700">Partnership type</label>
-                <input type="text" id="partnership_type" name="partnership_type" required
-                       placeholder="e.g. Clinical Training Partnership"
-                       class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-dwu-green focus:outline-none focus:ring-2 focus:ring-dwu-green/20">
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label for="agreement_type" class="mb-1.5 block text-sm font-medium text-slate-700">Agreement type</label>
-                    <select id="agreement_type" name="agreement_type" required
-                            class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-dwu-green focus:outline-none focus:ring-2 focus:ring-dwu-green/20">
-                        <option value="">Select type...</option>
-                        <option value="MOU">MOU</option>
-                        <option value="MOA">MOA</option>
-                        <option value="DFAT Contract">DFAT Contract</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="agreement_pdf" class="mb-1.5 block text-sm font-medium text-slate-700">Scanned agreement (PDF)</label>
-                    <input type="file" id="agreement_pdf" name="agreement_pdf" accept=".pdf,application/pdf"
-                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-dwu-green file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white">
-                </div>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label for="signed_date" class="mb-1.5 block text-sm font-medium text-slate-700">Signed date</label>
-                    <input type="date" id="signed_date" name="signed_date" required
-                           class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-dwu-green focus:outline-none focus:ring-2 focus:ring-dwu-green/20">
-                </div>
-                <div>
-                    <label for="expiry_date" class="mb-1.5 block text-sm font-medium text-slate-700">Expiry date</label>
-                    <input type="date" id="expiry_date" name="expiry_date" required
-                           class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-dwu-green focus:outline-none focus:ring-2 focus:ring-dwu-green/20">
-                </div>
-            </div>
-
-            <div class="pt-2">
-                <button type="submit"
-                        class="w-full rounded-lg bg-dwu-green px-4 py-3 text-sm font-semibold text-white transition hover:bg-dwu-dark sm:w-auto">
-                    Register Agreement in Registry
-                </button>
-            </div>
-        </form>
+        <?php require __DIR__ . '/includes/views/director-partnership-entry-form.php'; ?>
     </section>
 </div>
 

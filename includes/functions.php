@@ -372,20 +372,11 @@ function createAgreementWithHistory(
     string $expiryDate,
     string $createdBy
 ): int {
-    if ($expiryDate < $signedDate) {
-        throw new InvalidArgumentException('Expiry date must be on or after the signed date.');
+    $partnerTable = partnerTableName($pdo);
+
+    if ($partnerTable === null) {
+        throw new RuntimeException('Partner registry table is not available.');
     }
-
-    $tables = registryTableNames($pdo);
-    $agreementTable = $tables['agreement'];
-    $partnerTable = $tables['partner'];
-    $historyTable = $tables['agreement_history'];
-
-    if ($agreementTable === null || $partnerTable === null) {
-        throw new RuntimeException('Agreement registry tables are not available.');
-    }
-
-    $status = computeAgreementStatus($expiryDate);
 
     $partnerStmt = $pdo->prepare("SELECT Campus_ID FROM `{$partnerTable}` WHERE Partner_ID = :partner_id LIMIT 1");
     $partnerStmt->execute(['partner_id' => $partnerId]);
@@ -395,29 +386,197 @@ function createAgreementWithHistory(
         throw new InvalidArgumentException('Selected partner was not found.');
     }
 
+    return registerActivePartnership($pdo, [
+        'partner_mode'        => 'existing',
+        'partner_id'          => $partnerId,
+        'campus_id'           => (int) $partner['Campus_ID'],
+        'partnership_type'    => $partnershipType,
+        'agreement_type'      => $agreementType,
+        'signed_date'         => $signedDate,
+        'expiry_date'         => $expiryDate,
+        'scope_description'   => '',
+        'document_path'       => null,
+        'contact_name'        => 'Registry Contact',
+        'contact_designation' => null,
+        'contact_email'       => null,
+        'contact_phone'       => null,
+        'contact_fax'         => null,
+    ], (int) ($_SESSION['user_id'] ?? 0), $createdBy);
+}
+
+/**
+ * @param array{
+ *     partner_mode: string,
+ *     partner_id?: int,
+ *     partner_name?: string,
+ *     partner_country?: string,
+ *     partner_address?: string,
+ *     partner_website?: string,
+ *     campus_id: int,
+ *     contact_name: string,
+ *     contact_designation?: string,
+ *     contact_email?: string,
+ *     contact_phone?: string,
+ *     contact_fax?: string,
+ *     partnership_type: string,
+ *     agreement_type: string,
+ *     signed_date: string,
+ *     expiry_date: string,
+ *     scope_description?: string,
+ *     document_path?: ?string
+ * } $data
+ */
+function registerActivePartnership(
+    PDO $pdo,
+    array $data,
+    int $directorUserId,
+    string $createdByLabel = ''
+): int {
+    $partnerMode = strtolower(trim((string) ($data['partner_mode'] ?? 'existing')));
+    $campusId = (int) ($data['campus_id'] ?? 0);
+    $partnershipType = trim((string) ($data['partnership_type'] ?? ''));
+    $agreementType = trim((string) ($data['agreement_type'] ?? ''));
+    $signedDate = trim((string) ($data['signed_date'] ?? ''));
+    $expiryDate = trim((string) ($data['expiry_date'] ?? ''));
+    $scopeDescription = trim((string) ($data['scope_description'] ?? ''));
+    $documentPath = $data['document_path'] ?? null;
+    $contactName = trim((string) ($data['contact_name'] ?? ''));
+    $contactDesignation = trim((string) ($data['contact_designation'] ?? ''));
+    $contactEmail = trim((string) ($data['contact_email'] ?? ''));
+    $contactPhone = trim((string) ($data['contact_phone'] ?? ''));
+    $contactFax = trim((string) ($data['contact_fax'] ?? ''));
+
+    if ($directorUserId <= 0) {
+        throw new InvalidArgumentException('A valid director session is required to register agreements.');
+    }
+
+    if ($campusId <= 0) {
+        throw new InvalidArgumentException('Please select the managing DWU campus.');
+    }
+
+    if ($partnershipType === '' || $agreementType === '' || $signedDate === '' || $expiryDate === '') {
+        throw new InvalidArgumentException('Partnership type, agreement type, and agreement dates are required.');
+    }
+
+    if ($contactName === '') {
+        throw new InvalidArgumentException('Primary contact person name is required.');
+    }
+
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $signedDate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $expiryDate)) {
+        throw new InvalidArgumentException('Dates must be provided in YYYY-MM-DD format.');
+    }
+
+    if ($expiryDate < $signedDate) {
+        throw new InvalidArgumentException('Expiry date must be on or after the signed date.');
+    }
+
+    $tables = registryTableNames($pdo);
+    $agreementTable = $tables['agreement'];
+    $partnerTable = $tables['partner'];
+    $contactTable = $tables['contact'];
+    $historyTable = $tables['agreement_history'];
+    $campusTable = $tables['campus'];
+
+    if ($agreementTable === null || $partnerTable === null || $contactTable === null) {
+        throw new RuntimeException('Registry tables are not available.');
+    }
+
+    $campusStmt = $pdo->prepare("SELECT Campus_ID FROM `{$campusTable}` WHERE Campus_ID = :campus_id LIMIT 1");
+    $campusStmt->execute(['campus_id' => $campusId]);
+
+    if ($campusStmt->fetch() === false) {
+        throw new InvalidArgumentException('Selected campus was not found.');
+    }
+
+    if ($partnerMode === 'new') {
+        $partnerName = trim((string) ($data['partner_name'] ?? ''));
+        $partnerCountry = trim((string) ($data['partner_country'] ?? ''));
+        $partnerAddress = trim((string) ($data['partner_address'] ?? ''));
+        $partnerWebsite = trim((string) ($data['partner_website'] ?? ''));
+
+        if ($partnerName === '' || $partnerCountry === '') {
+            throw new InvalidArgumentException('Partner name and country are required for new partners.');
+        }
+
+        $partnerId = createPartnerRecord(
+            $pdo,
+            $campusId,
+            $partnerName,
+            $partnerCountry,
+            $partnerAddress,
+            $partnerWebsite
+        );
+    } else {
+        $partnerId = (int) ($data['partner_id'] ?? 0);
+
+        if ($partnerId <= 0) {
+            throw new InvalidArgumentException('Please select an existing partner.');
+        }
+
+        $partnerSql = "SELECT Partner_ID FROM `{$partnerTable}` WHERE Partner_ID = :partner_id";
+        if (partnerHasSoftDelete($pdo)) {
+            $partnerSql .= ' AND Is_Deleted = 0';
+        }
+        $partnerSql .= ' LIMIT 1';
+
+        $partnerStmt = $pdo->prepare($partnerSql);
+        $partnerStmt->execute(['partner_id' => $partnerId]);
+
+        if ($partnerStmt->fetch() === false) {
+            throw new InvalidArgumentException('Selected partner was not found.');
+        }
+    }
+
     $pdo->beginTransaction();
 
     try {
+        createContactRecord(
+            $pdo,
+            $partnerId,
+            $contactName,
+            $contactDesignation,
+            $contactEmail,
+            $contactPhone,
+            $contactFax
+        );
+
         $insertAgreement = $pdo->prepare(
             "INSERT INTO `{$agreementTable}`
-                (Partner_ID, Campus_ID, Partnership_Type, Agreement_Type, Status, Signed_Date, Expiry_Date)
+                (Partner_ID, Campus_ID, Submitted_By, Reviewed_By, Partnership_Type, Agreement_Type,
+                 Scope_Description, Status, Signed_Date, Expiry_Date, Document_Path)
              VALUES
-                (:partner_id, :campus_id, :partnership_type, :agreement_type, :status, :signed_date, :expiry_date)"
+                (:partner_id, :campus_id, :submitted_by, :reviewed_by, :partnership_type, :agreement_type,
+                 :scope_description, :status, :signed_date, :expiry_date, :document_path)"
         );
 
         $insertAgreement->execute([
-            'partner_id'       => $partnerId,
-            'campus_id'        => (int) $partner['Campus_ID'],
-            'partnership_type' => $partnershipType,
-            'agreement_type'   => $agreementType,
-            'status'           => $status,
-            'signed_date'      => $signedDate,
-            'expiry_date'      => $expiryDate,
+            'partner_id'         => $partnerId,
+            'campus_id'          => $campusId,
+            'submitted_by'       => $directorUserId,
+            'reviewed_by'        => $directorUserId,
+            'partnership_type'   => $partnershipType,
+            'agreement_type'     => $agreementType,
+            'scope_description'  => $scopeDescription !== '' ? $scopeDescription : null,
+            'status'             => Agreement::STATUS_ACTIVE,
+            'signed_date'        => $signedDate,
+            'expiry_date'        => $expiryDate,
+            'document_path'      => $documentPath,
         ]);
 
         $agreementId = (int) $pdo->lastInsertId();
 
         if ($historyTable !== null) {
+            $historyComment = $createdByLabel !== ''
+                ? sprintf(
+                    'Active partnership registered by %s via the Partnership Director dashboard.',
+                    $createdByLabel
+                )
+                : 'Active partnership registered via the Partnership Director dashboard.';
+
+            if ($scopeDescription !== '') {
+                $historyComment .= ' Scope/funding notes recorded.';
+            }
+
             $insertHistory = $pdo->prepare(
                 "INSERT INTO `{$historyTable}`
                     (Agree_ID, Event_Type, Event_Date, Comments)
@@ -429,10 +588,7 @@ function createAgreementWithHistory(
                 'agree_id'    => $agreementId,
                 'event_type'  => 'Agreement Created',
                 'event_date'  => date('Y-m-d H:i:s'),
-                'comments'    => sprintf(
-                    'Initial agreement registration submitted by %s via the Partnership Director dashboard.',
-                    $createdBy
-                ),
+                'comments'    => $historyComment,
             ]);
         }
 
@@ -443,4 +599,118 @@ function createAgreementWithHistory(
         $pdo->rollBack();
         throw $exception;
     }
+}
+
+function createPartnerRecord(
+    PDO $pdo,
+    int $campusId,
+    string $name,
+    string $country,
+    string $address = '',
+    string $website = ''
+): int {
+    $partnerTable = partnerTableName($pdo);
+
+    if ($partnerTable === null) {
+        throw new RuntimeException('Partner registry table is not available.');
+    }
+
+    $columns = $pdo->query("SHOW COLUMNS FROM `{$partnerTable}`")->fetchAll(PDO::FETCH_COLUMN);
+    $fields = ['Campus_ID', 'Name', 'Country'];
+    $values = [':campus_id', ':name', ':country'];
+    $params = [
+        'campus_id' => $campusId,
+        'name'      => $name,
+        'country'   => $country,
+    ];
+
+    if (in_array('Address', $columns, true)) {
+        $fields[] = 'Address';
+        $values[] = ':address';
+        $params['address'] = $address !== '' ? $address : null;
+    }
+
+    if (in_array('Website', $columns, true)) {
+        $fields[] = 'Website';
+        $values[] = ':website';
+        $params['website'] = $website !== '' ? $website : null;
+    }
+
+    if (in_array('Is_Deleted', $columns, true)) {
+        $fields[] = 'Is_Deleted';
+        $values[] = '0';
+    }
+
+    $sql = sprintf(
+        'INSERT INTO `%s` (%s) VALUES (%s)',
+        $partnerTable,
+        implode(', ', $fields),
+        implode(', ', $values)
+    );
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+
+    return (int) $pdo->lastInsertId();
+}
+
+function createContactRecord(
+    PDO $pdo,
+    int $partnerId,
+    string $name,
+    string $designation = '',
+    string $email = '',
+    string $phone = '',
+    string $fax = ''
+): int {
+    $contactTable = contactTableName($pdo);
+
+    if ($contactTable === null) {
+        throw new RuntimeException('Contact registry table is not available.');
+    }
+
+    $stmt = $pdo->prepare(
+        "INSERT INTO `{$contactTable}`
+            (Partner_ID, Name, Designation, Email, Phone_Number, Fax)
+         VALUES
+            (:partner_id, :name, :designation, :email, :phone_number, :fax)"
+    );
+
+    $stmt->execute([
+        'partner_id'   => $partnerId,
+        'name'         => $name,
+        'designation'  => $designation !== '' ? $designation : null,
+        'email'        => $email !== '' ? $email : null,
+        'phone_number' => $phone !== '' ? $phone : null,
+        'fax'          => $fax !== '' ? $fax : null,
+    ]);
+
+    return (int) $pdo->lastInsertId();
+}
+
+function storeUploadedAgreementPdf(array $file): ?string
+{
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+
+    if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+        throw new InvalidArgumentException('Unable to upload the agreement PDF. Please try again.');
+    }
+
+    $uploadDir = dirname(__DIR__) . '/uploads/agreements';
+
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+
+    $safeName = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename((string) ($file['name'] ?? 'agreement.pdf')));
+    $filename = time() . '_' . $safeName;
+    $targetPath = $uploadDir . '/' . $filename;
+
+    if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+        throw new RuntimeException('Failed to store the uploaded agreement PDF.');
+    }
+
+    return 'uploads/agreements/' . $filename;
 }

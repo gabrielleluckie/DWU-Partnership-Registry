@@ -417,6 +417,11 @@ body.app-shell .nav-tabs .nav-link.active {
     font-weight: 600;
 }
 
+/* Campus admin dashboard — page action bar */
+body.app-shell .app-campus-admin-action-bar {
+    padding-top: 0.15rem;
+}
+
 /* Registry dashboard — action bar (back / logout) */
 body.app-shell .app-registry-action-bar {
     padding-top: 0.15rem;
