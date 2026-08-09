@@ -2,11 +2,30 @@
 
 declare(strict_types=1);
 
+use App\Models\Agreement;
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/../config/app.php';
+
+spl_autoload_register(static function (string $class): void {
+    $prefix = 'App\\';
+
+    if (!str_starts_with($class, $prefix)) {
+        return;
+    }
+
+    $relative = str_replace('\\', '/', substr($class, strlen($prefix)));
+    $path = __DIR__ . '/../app/' . $relative . '.php';
+
+    if (is_file($path)) {
+        require_once $path;
+    }
+});
+
 require_once __DIR__ . '/functions.php';
 
 const ROLE_CAMPUS_ADMIN = 'Campus Admin';
@@ -14,51 +33,288 @@ const ROLE_PRESIDENT = 'President';
 const ROLE_EXECUTIVE_OFFICER = 'Executive Officer';
 const ROLE_PARTNERSHIP_DIRECTOR = 'Partnership Director';
 
+/**
+ * @return array{first_name_col: string, last_name_col: string, has_password: bool, campus_table: string}
+ */
+function usersTableMeta(PDO $pdo): array
+{
+    static $meta = null;
+
+    if ($meta !== null) {
+        return $meta;
+    }
+
+    $columns = $pdo->query('SHOW COLUMNS FROM users')->fetchAll(PDO::FETCH_COLUMN);
+    $tables = $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
+
+    $meta = [
+        'first_name_col' => in_array('First_name', $columns, true) ? 'First_name' : 'First_Name',
+        'last_name_col'  => in_array('Last_name', $columns, true) ? 'Last_name' : 'Last_Name',
+        'has_password'   => in_array('password', $columns, true),
+        'campus_table'   => in_array('campus', $tables, true) ? 'campus' : 'campuses',
+    ];
+
+    return $meta;
+}
+
+function normalizeDbRole(string $role): string
+{
+    $normalized = roleSlug($role);
+
+    return match ($normalized) {
+        'campus_admin'         => ROLE_CAMPUS_ADMIN,
+        'partnership_director', 'director' => ROLE_PARTNERSHIP_DIRECTOR,
+        'executive_officer'    => ROLE_EXECUTIVE_OFFICER,
+        'president'            => ROLE_PRESIDENT,
+        default                => $role,
+    };
+}
+
+/** Normalize any role label to a lowercase slug (e.g. partnership_director). */
+function roleSlug(string $role): string
+{
+    return strtolower(str_replace([' ', '-'], '_', trim($role)));
+}
+
+/** Resolve the active role from the user profile or session store. */
+function resolveActiveUserRole(?array $user = null): string
+{
+    if ($user !== null && !empty($user['role'])) {
+        return (string) $user['role'];
+    }
+
+    if (!empty($_SESSION['user_role'])) {
+        return (string) $_SESSION['user_role'];
+    }
+
+    if (!empty($_SESSION['role'])) {
+        return (string) $_SESSION['role'];
+    }
+
+    return '';
+}
+
+function syncSessionRole(string $displayRole): void
+{
+    $_SESSION['user_role'] = normalizeDbRole($displayRole);
+    $_SESSION['role'] = roleSlug($_SESSION['user_role']);
+}
+
+function normalizeUserRow(array $user): array
+{
+    if (isset($user['First_name']) || isset($user['First_Name'])) {
+        $user['First_name'] = $user['First_name'] ?? $user['First_Name'];
+        $user['Last_name'] = $user['Last_name'] ?? $user['Last_Name'];
+    }
+
+    $user['Role'] = normalizeDbRole((string) ($user['Role'] ?? ''));
+    $user['campus_name'] = $user['campus_name'] ?? 'Head Office';
+
+    return $user;
+}
+
+function buildUserSelectSql(PDO $pdo, bool $includePassword = false): string
+{
+    $meta = usersTableMeta($pdo);
+    $campusTable = $meta['campus_table'];
+    $first = $meta['first_name_col'];
+    $last = $meta['last_name_col'];
+    $passwordSelect = $includePassword && $meta['has_password'] ? ', u.password' : '';
+
+    return "SELECT u.User_ID, u.Campus_ID,
+                   u.`{$first}` AS First_name, u.`{$last}` AS Last_name,
+                   u.Email, u.Phone_Number, u.Role{$passwordSelect},
+                   c.Name AS campus_name
+            FROM users u
+            LEFT JOIN `{$campusTable}` c ON u.Campus_ID = c.Campus_ID";
+}
+
+/** Application web-root path (e.g. /IS406_PartnershipRegistry). */
+function appBasePath(): string
+{
+    static $base = null;
+
+    if ($base !== null) {
+        return $base;
+    }
+
+    $documentRoot = realpath($_SERVER['DOCUMENT_ROOT'] ?? '');
+    $applicationRoot = realpath(dirname(__DIR__));
+
+    if (
+        is_string($documentRoot) && $documentRoot !== false
+        && is_string($applicationRoot) && $applicationRoot !== false
+    ) {
+        $documentRoot = str_replace('\\', '/', $documentRoot);
+        $applicationRoot = str_replace('\\', '/', $applicationRoot);
+
+        if (str_starts_with($applicationRoot, $documentRoot)) {
+            $base = substr($applicationRoot, strlen($documentRoot));
+            $base = rtrim($base, '/');
+
+            return $base === '' ? '' : $base;
+        }
+    }
+
+    $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+    $scriptDir = dirname($scriptName);
+
+    if (str_ends_with($scriptDir, '/dashboard')) {
+        $base = dirname($scriptDir);
+    } else {
+        $base = ($scriptDir === '/' || $scriptDir === '.') ? '' : $scriptDir;
+    }
+
+    $base = rtrim($base, '/');
+
+    return $base === '' ? '' : $base;
+}
+
+/** Build an absolute path from the application web root. */
+function appUrl(string $path = ''): string
+{
+    $base = appBasePath();
+    $path = ltrim(str_replace('\\', '/', $path), '/');
+
+    if ($base === '') {
+        return $path === '' ? '/' : '/' . $path;
+    }
+
+    return $path === '' ? $base : $base . '/' . $path;
+}
+
 function roleDashboardMap(): array
 {
     return [
-        ROLE_CAMPUS_ADMIN          => 'dashboard_campus_admin.php',
-        ROLE_PRESIDENT             => 'dashboard_executive.php',
-        ROLE_EXECUTIVE_OFFICER     => 'dashboard_executive.php',
-        ROLE_PARTNERSHIP_DIRECTOR  => 'dashboard_director.php',
+        ROLE_CAMPUS_ADMIN          => routePath('dashboard/campus-admin'),
+        ROLE_PRESIDENT             => routePath('dashboard/registry'),
+        ROLE_EXECUTIVE_OFFICER     => routePath('dashboard/registry'),
+        ROLE_PARTNERSHIP_DIRECTOR  => routePath('dashboard/director'),
     ];
+}
+
+/** Canonical login page path. */
+function loginRoute(): string
+{
+    return appUrl('login');
+}
+
+function logoutRoute(): string
+{
+    return appUrl('logout');
+}
+
+/** Build a dashboard or application route path. */
+function routePath(string $route): string
+{
+    return appUrl(ltrim($route, '/'));
 }
 
 function dashboardForRole(string $role): ?string
 {
-    return roleDashboardMap()[$role] ?? null;
+    $normalizedRole = normalizeDbRole($role);
+
+    return roleDashboardMap()[$normalizedRole] ?? null;
+}
+
+function isPartnershipDirectorRole(?string $role): bool
+{
+    if ($role === null || $role === '') {
+        return false;
+    }
+
+    return in_array(roleSlug($role), ['partnership_director', 'director'], true);
+}
+
+function isExecutiveRegistryHomeRole(?string $role): bool
+{
+    if ($role === null || $role === '') {
+        return false;
+    }
+
+    return in_array(roleSlug($role), ['president', 'executive_officer'], true);
+}
+
+function isRegistryDashboardRequest(): bool
+{
+    $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $uri = str_replace('\\', '/', (string) ($_SERVER['REQUEST_URI'] ?? ''));
+
+    return str_contains($script, 'registry_dashboard.php')
+        || str_contains($script, '/dashboard/registry')
+        || preg_match('#/dashboard/registry(?:\.php)?(?:\?|$)#', $uri) === 1;
+}
+
+function roleMatchesAllowed(string $role, array $allowedRoles): bool
+{
+    $roleSlug = roleSlug($role);
+    $directorSlugs = ['partnership_director', 'director'];
+
+    foreach ($allowedRoles as $allowedRole) {
+        $allowedSlug = roleSlug((string) $allowedRole);
+
+        if ($role === $allowedRole || $allowedSlug === $roleSlug) {
+            return true;
+        }
+
+        if (
+            in_array($roleSlug, $directorSlugs, true)
+            && in_array($allowedSlug, $directorSlugs, true)
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Optional back-navigation link for the global header.
+ *
+ * @return array{label: string, href: string}|null
+ */
+function registryHeaderBackLink(?array $user = null): ?array
+{
+    $activeRole = resolveActiveUserRole($user);
+    $directorDashboard = routePath('dashboard/director');
+
+    if (dashboardForRole($activeRole) !== $directorDashboard && !isPartnershipDirectorRole($activeRole)) {
+        return null;
+    }
+
+    if (isExecutiveRegistryHomeRole($activeRole)) {
+        return null;
+    }
+
+    return [
+        'label' => '← Back to Director Dashboard',
+        'href'  => $directorDashboard,
+    ];
 }
 
 function fetchUserById(PDO $pdo, int $userId): ?array
 {
-    $stmt = $pdo->prepare(
-        'SELECT u.User_ID, u.Campus_ID, u.First_name, u.Last_name, u.Email,
-                u.Phone_Number, u.Role, c.Name AS campus_name
-         FROM users u
-         INNER JOIN campuses c ON u.Campus_ID = c.Campus_ID
-         WHERE u.User_ID = :user_id
-         LIMIT 1'
-    );
+    $sql = buildUserSelectSql($pdo) . ' WHERE u.User_ID = :user_id LIMIT 1';
+    $stmt = $pdo->prepare($sql);
     $stmt->execute(['user_id' => $userId]);
     $user = $stmt->fetch();
 
-    return $user ?: null;
+    return $user ? normalizeUserRow($user) : null;
 }
 
 function fetchUserByEmail(PDO $pdo, string $email): ?array
 {
-    $stmt = $pdo->prepare(
-        'SELECT u.User_ID, u.Campus_ID, u.First_name, u.Last_name, u.Email,
-                u.password, u.Phone_Number, u.Role, c.Name AS campus_name
-         FROM users u
-         INNER JOIN campuses c ON u.Campus_ID = c.Campus_ID
-         WHERE u.Email = :email
-         LIMIT 1'
-    );
+    $sql = buildUserSelectSql($pdo, true) . ' WHERE u.Email = :email LIMIT 1';
+    $stmt = $pdo->prepare($sql);
     $stmt->execute(['email' => $email]);
     $user = $stmt->fetch();
 
-    return $user ?: null;
+    return $user ? normalizeUserRow($user) : null;
+}
+
+function usersTableHasPasswordColumn(PDO $pdo): bool
+{
+    return usersTableMeta($pdo)['has_password'];
 }
 
 function formatUserProfile(array $user): array
@@ -72,7 +328,9 @@ function formatUserProfile(array $user): array
         'email'        => $user['Email'],
         'role'         => $user['Role'],
         'campus'       => $user['campus_name'],
-        'campus_id'    => (int) $user['Campus_ID'],
+        'campus_id'    => isset($user['Campus_ID']) && $user['Campus_ID'] !== null && $user['Campus_ID'] !== ''
+            ? (int) $user['Campus_ID']
+            : null,
         'staff_id'     => 'USR-' . str_pad((string) $user['User_ID'], 4, '0', STR_PAD_LEFT),
         'department'   => 'Office of Partnerships & Development',
         'last_login'   => date('Y-m-d H:i:s'),
@@ -101,9 +359,15 @@ function currentUser(PDO $pdo): ?array
 function loginUser(array $user): void
 {
     session_regenerate_id(true);
+    $displayRole = normalizeDbRole((string) ($user['Role'] ?? $user['role'] ?? ''));
+
     $_SESSION['user_id'] = (int) $user['User_ID'];
-    $_SESSION['user_role'] = $user['Role'];
+    $_SESSION['user_role'] = $displayRole;
+    $_SESSION['role'] = roleSlug($displayRole);
     $_SESSION['user_name'] = trim($user['First_name'] . ' ' . $user['Last_name']);
+    $_SESSION['campus_id'] = isset($user['Campus_ID']) && $user['Campus_ID'] !== null && $user['Campus_ID'] !== ''
+        ? (int) $user['Campus_ID']
+        : null;
 }
 
 function logoutUser(): void
@@ -128,13 +392,20 @@ function logoutUser(): void
 
 function redirect(string $location): never
 {
+    if (
+        !preg_match('#^https?://#i', $location)
+        && !str_starts_with($location, '/')
+    ) {
+        $location = appUrl($location);
+    }
+
     header('Location: ' . $location);
     exit;
 }
 
 function redirectWithError(string $error): never
 {
-    redirect('index.php?error=' . urlencode($error));
+    redirect(loginRoute() . '?error=' . urlencode($error));
 }
 
 function requireAuth(PDO $pdo): array
@@ -150,6 +421,8 @@ function requireAuth(PDO $pdo): array
         redirectWithError('Your session has expired. Please sign in again.');
     }
 
+    syncSessionRole((string) $user['role']);
+
     return $user;
 }
 
@@ -157,7 +430,7 @@ function requireRole(PDO $pdo, array $allowedRoles): array
 {
     $user = requireAuth($pdo);
 
-    if (!in_array($user['role'], $allowedRoles, true)) {
+    if (!roleMatchesAllowed((string) $user['role'], $allowedRoles)) {
         redirectWithError('You do not have permission to access that page.');
     }
 
@@ -166,7 +439,7 @@ function requireRole(PDO $pdo, array $allowedRoles): array
 
 function redirectToRoleDashboard(string $role): never
 {
-    $dashboard = dashboardForRole($role);
+    $dashboard = dashboardForRole(normalizeDbRole($role));
 
     if ($dashboard === null) {
         redirectWithError('No dashboard is configured for your role.');
@@ -182,14 +455,7 @@ function e(?string $value): string
 
 function assetUrl(string $path): string
 {
-    static $base = null;
-
-    if ($base === null) {
-        $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
-        $base = ($scriptDir === '/' || $scriptDir === '.') ? '' : $scriptDir;
-    }
-
-    return ($base !== '' ? $base . '/' : '') . ltrim($path, '/');
+    return appUrl(ltrim($path, '/'));
 }
 
 function flashMessage(string $key): ?string
@@ -209,58 +475,23 @@ function setFlash(string $key, string $message): void
     $_SESSION['flash'][$key] = $message;
 }
 
+/**
+ * In-memory proposal review queue (session). Campus Admin submissions land here only —
+ * they are NOT written to partner/agreement/contact registry tables until the
+ * Partnership Director completes the Active Partnership Entry Form.
+ */
 function initializeMockProposals(): void
 {
-    if (!empty($_SESSION['proposals'])) {
-        return;
+    $queueVersion = 2;
+
+    if (($_SESSION['proposals_version'] ?? 0) < $queueVersion) {
+        $_SESSION['proposals'] = [];
+        $_SESSION['proposals_version'] = $queueVersion;
     }
 
-    $_SESSION['proposals'] = [
-        [
-            'id'                 => 1001,
-            'partner_name'       => 'Port Moresby General Hospital',
-            'partnership_type'   => 'Clinical Training Partnership',
-            'agreement_type'     => 'MOA',
-            'campus'             => 'Port Moresby Campus',
-            'submitted_by'       => 'Peter Kari',
-            'submitted_at'       => '2026-07-10',
-            'status'             => 'pending',
-            'rejection_comment'  => '',
-        ],
-        [
-            'id'                 => 1002,
-            'partner_name'       => 'Kokopo Tourism Board',
-            'partnership_type'   => 'Community Engagement',
-            'agreement_type'     => 'MOU',
-            'campus'             => 'Rabaul Campus',
-            'submitted_by'       => 'Michael Tavana',
-            'submitted_at'       => '2026-07-12',
-            'status'             => 'pending',
-            'rejection_comment'  => '',
-        ],
-        [
-            'id'                 => 1003,
-            'partner_name'       => 'Sepik River Eco-Tourism Cooperative',
-            'partnership_type'   => 'Research Collaboration',
-            'agreement_type'     => 'MOU',
-            'campus'             => 'Wewak Campus',
-            'submitted_by'       => 'Alois Sanki',
-            'submitted_at'       => '2026-07-08',
-            'status'             => 'approved',
-            'rejection_comment'  => '',
-        ],
-        [
-            'id'                 => 1004,
-            'partner_name'       => 'Madang Provincial Health Authority',
-            'partnership_type'   => 'Health Outreach',
-            'agreement_type'     => 'MOA',
-            'campus'             => 'Wewak Campus',
-            'submitted_by'       => 'Alois Sanki',
-            'submitted_at'       => '2026-07-01',
-            'status'             => 'rejected',
-            'rejection_comment'  => 'Incomplete partner contact details and unsigned draft MOA attached.',
-        ],
-    ];
+    if (!isset($_SESSION['proposals'])) {
+        $_SESSION['proposals'] = [];
+    }
 }
 
 function getProposalsByStatus(string $status): array
@@ -325,19 +556,20 @@ function createCampusProposal(array $formData, array $user, string $status = 'pe
         $maxId = max($maxId, (int) $proposal['id']);
     }
 
-    $partnershipTypes = $formData['partnership_types'] ?? [];
+    $partnershipTypes = $formData['partnership_nature'] ?? $formData['partnership_types'] ?? [];
     if (!is_array($partnershipTypes)) {
         $partnershipTypes = [$partnershipTypes];
     }
 
     $newId = $maxId + 1;
+    // Session queue only — registry tables are updated exclusively via the Director entry form.
     $_SESSION['proposals'][] = [
         'id'                 => $newId,
-        'partner_name'       => trim((string) ($formData['partner_legal_name'] ?? '')),
+        'partner_name'       => trim((string) ($formData['partner_name'] ?? $formData['partner_legal_name'] ?? '')),
         'partnership_type'   => implode(', ', array_map('strval', $partnershipTypes)),
         'agreement_type'     => trim((string) ($formData['agreement_type'] ?? 'MOU')),
-        'campus'             => trim((string) ($formData['submitter_campus'] ?? $user['campus'])),
-        'submitted_by'       => trim((string) ($formData['submitter_name'] ?? $user['name'])),
+        'campus'             => trim((string) ($formData['campus'] ?? $formData['submitter_campus'] ?? $user['campus'])),
+        'submitted_by'       => trim((string) ($formData['staff_name'] ?? $formData['submitter_name'] ?? $user['name'])),
         'submitted_at'       => date('Y-m-d'),
         'status'             => $status,
         'rejection_comment'  => '',
@@ -350,6 +582,27 @@ function createCampusProposal(array $formData, array $user, string $status = 'pe
 function renderSiteFooter(): void
 {
     require __DIR__ . '/site-footer.php';
+}
+
+function renderDashboardLogoutAction(?array $backLink = null): void
+{
+    ?>
+    <div class="d-flex justify-content-end align-items-center gap-2 mb-3 app-dashboard-action-bar">
+        <?php if (is_array($backLink) && !empty($backLink['href'])): ?>
+            <a href="<?= e($backLink['href']) ?>"
+               class="btn btn-outline-success btn-sm rounded-circle app-dashboard-icon-btn"
+               title="<?= e($backLink['label'] ?? 'Back') ?>"
+               aria-label="<?= e($backLink['label'] ?? 'Back') ?>">
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            </a>
+        <?php endif; ?>
+        <a href="<?= e(logoutRoute()) ?>"
+           class="btn btn-outline-danger btn-sm d-inline-flex align-items-center gap-2 px-3 app-dashboard-logout-btn">
+            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+    <?php
 }
 
 function renderDashboardHeader(array $user, string $title, string $subtitle = ''): void
@@ -395,9 +648,9 @@ function renderDashboardHeader(array $user, string $title, string $subtitle = ''
                         <p class="text-sm font-semibold text-slate-900"><?= e($user['name']) ?></p>
                         <p class="text-xs text-slate-500"><?= e($user['role']) ?> · <?= e($user['campus']) ?></p>
                     </div>
-                    <a href="logout.php"
+                    <a href="<?= e(logoutRoute()) ?>"
                        class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
-                        Sign Out
+                        Logout
                     </a>
                 </div>
             </div>
@@ -418,25 +671,26 @@ function renderDashboardFooter(): void
 
 function fetchDirectorMessageRecipients(PDO $pdo): array
 {
-    $stmt = $pdo->query(
-        "SELECT u.First_name, u.Last_name, u.Email, u.Role, c.Name AS campus_name
-         FROM users u
-         INNER JOIN campuses c ON u.Campus_ID = c.Campus_ID
-         WHERE u.Role IN ('Campus Admin', 'President', 'Executive Officer')
-         ORDER BY
-            FIELD(u.Role, 'President', 'Executive Officer', 'Campus Admin'),
-            c.Name ASC,
-            u.Last_name ASC"
-    );
+    $meta = usersTableMeta($pdo);
+    $campusTable = $meta['campus_table'];
+    $first = $meta['first_name_col'];
+    $last = $meta['last_name_col'];
 
+    $sql = "SELECT u.`{$first}` AS First_name, u.`{$last}` AS Last_name, u.Email, u.Role, c.Name AS campus_name
+            FROM users u
+            LEFT JOIN `{$campusTable}` c ON u.Campus_ID = c.Campus_ID
+            WHERE u.Role IN ('Campus Admin', 'President', 'Executive Officer', 'campus_admin', 'president', 'executive_officer')
+            ORDER BY u.`{$last}` ASC";
+
+    $stmt = $pdo->query($sql);
     $recipients = [];
 
     while ($row = $stmt->fetch()) {
         $recipients[] = [
             'name'   => trim($row['First_name'] . ' ' . $row['Last_name']),
             'email'  => $row['Email'],
-            'role'   => $row['Role'],
-            'campus' => $row['campus_name'],
+            'role'   => normalizeDbRole((string) $row['Role']),
+            'campus' => $row['campus_name'] ?? 'Head Office',
         ];
     }
 
@@ -485,24 +739,26 @@ function buildCampusAdminNotifications(array $approvedProposals, array $rejected
 
 function fetchCampusAdminMessageRecipients(PDO $pdo): array
 {
-    $stmt = $pdo->query(
-        "SELECT u.First_name, u.Last_name, u.Email, u.Role, c.Name AS campus_name
-         FROM users u
-         INNER JOIN campuses c ON u.Campus_ID = c.Campus_ID
-         WHERE u.Role IN ('Partnership Director', 'President', 'Executive Officer')
-         ORDER BY
-            FIELD(u.Role, 'Partnership Director', 'President', 'Executive Officer'),
-            u.Last_name ASC"
-    );
+    $meta = usersTableMeta($pdo);
+    $campusTable = $meta['campus_table'];
+    $first = $meta['first_name_col'];
+    $last = $meta['last_name_col'];
 
+    $sql = "SELECT u.`{$first}` AS First_name, u.`{$last}` AS Last_name, u.Email, u.Role, c.Name AS campus_name
+            FROM users u
+            LEFT JOIN `{$campusTable}` c ON u.Campus_ID = c.Campus_ID
+            WHERE u.Role IN ('Partnership Director', 'President', 'Executive Officer', 'partnership_director', 'president', 'executive_officer')
+            ORDER BY u.`{$last}` ASC";
+
+    $stmt = $pdo->query($sql);
     $recipients = [];
 
     while ($row = $stmt->fetch()) {
         $recipients[] = [
             'name'   => trim($row['First_name'] . ' ' . $row['Last_name']),
             'email'  => $row['Email'],
-            'role'   => $row['Role'],
-            'campus' => $row['campus_name'],
+            'role'   => normalizeDbRole((string) $row['Role']),
+            'campus' => $row['campus_name'] ?? 'Head Office',
         ];
     }
 
@@ -531,6 +787,17 @@ function renderInstitutionalDashboardHeader(
         $notificationCount = 3;
     }
 
+    $bodyClass = $options['bodyClass'] ?? 'app-shell';
+    $pageSubtitle = $options['pageSubtitle'] ?? '';
+    $extraStylesheets = array_merge([
+        'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+        'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
+        'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
+        assetUrl('css/app-shell.css'),
+        assetUrl('css/director-header.css'),
+        assetUrl('css/site-footer.css'),
+    ], $options['extraStylesheets'] ?? []);
+
     require __DIR__ . '/director-header.php';
 }
 
@@ -540,10 +807,15 @@ function renderDirectorDashboardHeader(
     array $pendingProposals = [],
     int $notificationCount = 0
 ): void {
+    if ($notificationCount <= 0) {
+        $notificationCount = count($pendingProposals);
+    }
+
     renderInstitutionalDashboardHeader($user, $pageTitle, [
         'notifications'            => buildDirectorNotifications($pendingProposals),
         'notificationCount'        => $notificationCount,
-        'useMockNotificationCount' => true,
+        'useMockNotificationCount' => false,
+        'pageSubtitle'             => 'Review campus proposals and register approved partnerships in the live registry.',
     ]);
 }
 
@@ -560,6 +832,26 @@ function renderCampusAdminDashboardHeader(
         'messageRecipients'     => fetchCampusAdminMessageRecipients($pdo),
         'notificationsHeading'  => 'Proposal Status Updates',
         'messagePlaceholder'    => 'Type your message to the Partnership Director, President, or Executive Officer...',
+        'pageSubtitle'          => 'Submit and review proposed partnership agreements.',
+        'extraStylesheets'      => [assetUrl('css/campus-admin-dashboard.css')],
+    ]);
+}
+
+function renderExecutiveDashboardHeader(
+    array $user,
+    string $pageTitle,
+    string $pageSubtitle = ''
+): void {
+    global $pdo;
+
+    renderInstitutionalDashboardHeader($user, $pageTitle, [
+        'notifications'        => [],
+        'notificationCount'    => 0,
+        'messageRecipients'    => fetchDirectorMessageRecipients($pdo),
+        'notificationsHeading' => 'Registry Notifications',
+        'messagePlaceholder'   => 'Type your message to Campus Admins, Partnership Director, or Executive staff...',
+        'pageSubtitle'         => $pageSubtitle,
+        'extraStylesheets'     => [assetUrl('css/campus-admin-dashboard.css')],
     ]);
 }
 
@@ -567,6 +859,7 @@ function renderDirectorDashboardFooter(): void
 {
     ?>
         </main>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script src="<?= e(assetUrl('js/director-header.js')) ?>"></script>
         <?php renderSiteFooter(); ?>
     </body>
@@ -577,32 +870,40 @@ function renderDirectorDashboardFooter(): void
 function statusBadgeClasses(string $status): string
 {
     return match ($status) {
-        'Active'         => 'bg-emerald-100 text-emerald-800 ring-emerald-600/20',
-        'Expired'        => 'bg-rose-100 text-rose-800 ring-rose-600/20',
-        'Soon to Expire' => 'bg-amber-100 text-amber-800 ring-amber-600/20',
-        default          => 'bg-slate-100 text-slate-700 ring-slate-500/20',
+        'Active', Agreement::STATUS_ACTIVE         => 'bg-success',
+        'Expired', Agreement::STATUS_EXPIRED      => 'bg-danger',
+        'Expiring Soon', Agreement::STATUS_EXPIRING_SOON, 'Soon to Expire' => 'bg-warning text-dark',
+        default                                     => 'bg-secondary',
     };
 }
 
 function renderMetricCards(array $counts): void
 {
     ?>
-    <div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p class="text-sm font-medium text-slate-500">Total Agreements</p>
-            <p class="mt-2 text-3xl font-bold text-slate-900"><?= (int) $counts['Total'] ?></p>
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="app-card p-4 h-100">
+                <p class="small text-secondary mb-1">Total Agreements</p>
+                <p class="h3 fw-bold mb-0"><?= (int) $counts['Total'] ?></p>
+            </div>
         </div>
-        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
-            <p class="text-sm font-medium text-emerald-700">Active</p>
-            <p class="mt-2 text-3xl font-bold text-emerald-900"><?= (int) $counts['Active'] ?></p>
+        <div class="col-sm-6 col-lg-3">
+            <div class="app-card p-4 h-100">
+                <p class="small text-secondary mb-1">Active</p>
+                <p class="h3 fw-bold mb-0 text-success"><?= (int) $counts['Active'] ?></p>
+            </div>
         </div>
-        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
-            <p class="text-sm font-medium text-amber-700">Expiring Soon</p>
-            <p class="mt-2 text-3xl font-bold text-amber-900"><?= (int) $counts['Soon to Expire'] ?></p>
+        <div class="col-sm-6 col-lg-3">
+            <div class="app-card p-4 h-100">
+                <p class="small text-secondary mb-1">Expiring Soon</p>
+                <p class="h3 fw-bold mb-0 text-warning"><?= (int) ($counts['Expiring Soon'] ?? $counts['Soon to Expire'] ?? 0) ?></p>
+            </div>
         </div>
-        <div class="rounded-2xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
-            <p class="text-sm font-medium text-rose-700">Expired</p>
-            <p class="mt-2 text-3xl font-bold text-rose-900"><?= (int) $counts['Expired'] ?></p>
+        <div class="col-sm-6 col-lg-3">
+            <div class="app-card p-4 h-100">
+                <p class="small text-secondary mb-1">Expired</p>
+                <p class="h3 fw-bold mb-0 text-danger"><?= (int) $counts['Expired'] ?></p>
+            </div>
         </div>
     </div>
     <?php
@@ -633,7 +934,7 @@ function legacyNavItems(string $role): array
     if ($role === ROLE_CAMPUS_ADMIN) {
         $items['intake'] = [
             'label' => 'Submit Proposal',
-            'href'  => 'dashboard_campus_admin.php',
+            'href'  => routePath('dashboard/campus-admin'),
             'icon'  => '<svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12H2"/><path d="M5 12V4h14v8"/><path d="M5 12v8h14v-8"/></svg>',
         ];
     }

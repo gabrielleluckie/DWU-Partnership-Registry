@@ -8,5 +8,5 @@ if (isLoggedIn()) {
     redirect('router.php');
 }
 
-header('Location: index.php');
-exit;
+redirect(loginRoute());
+

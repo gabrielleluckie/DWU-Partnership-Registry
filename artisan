@@ -1,0 +1,34 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Lightweight artisan-style CLI for the PDMIS plain-PHP application.
+ *
+ * Usage:
+ *   php artisan agreements:update-statuses
+ */
+
+$pdo = require __DIR__ . '/bootstrap/app.php';
+
+$command = $argv[1] ?? null;
+
+if ($command === null || in_array($command, ['-h', '--help', 'help'], true)) {
+    echo "DWU Partnership Registry — Console\n";
+    echo "Available commands:\n";
+    echo "  agreements:update-statuses   Recalculate agreement statuses and send expiry alerts\n";
+    exit(0);
+}
+
+try {
+    $exitCode = match ($command) {
+        'agreements:update-statuses' => (new App\Console\Commands\UpdateAgreementStatuses($pdo))->handle(),
+        default => throw new InvalidArgumentException("Unknown command [{$command}]."),
+    };
+} catch (Throwable $exception) {
+    fwrite(STDERR, 'Error: ' . $exception->getMessage() . PHP_EOL);
+    exit(1);
+}
+
+exit($exitCode);
