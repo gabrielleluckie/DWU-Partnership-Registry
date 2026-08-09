@@ -88,16 +88,8 @@ renderDirectorDashboardHeader(
     $pendingCount
 );
 
-$logoutUrl = logoutRoute();
+renderDashboardLogoutAction();
 ?>
-
-<div class="d-flex justify-content-end align-items-center mb-3">
-    <a href="<?= e($logoutUrl) ?>"
-       class="btn btn-sm btn-warning fw-semibold app-logout-btn d-inline-flex align-items-center gap-2">
-        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
-        <span>Logout</span>
-    </a>
-</div>
 
 <?php if ($message = flashMessage('success')): ?>
     <div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><?= e($message) ?></div>

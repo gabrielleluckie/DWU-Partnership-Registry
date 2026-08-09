@@ -584,6 +584,27 @@ function renderSiteFooter(): void
     require __DIR__ . '/site-footer.php';
 }
 
+function renderDashboardLogoutAction(?array $backLink = null): void
+{
+    ?>
+    <div class="d-flex justify-content-end align-items-center gap-2 mb-3 app-dashboard-action-bar">
+        <?php if (is_array($backLink) && !empty($backLink['href'])): ?>
+            <a href="<?= e($backLink['href']) ?>"
+               class="btn btn-outline-success btn-sm rounded-circle app-dashboard-icon-btn"
+               title="<?= e($backLink['label'] ?? 'Back') ?>"
+               aria-label="<?= e($backLink['label'] ?? 'Back') ?>">
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            </a>
+        <?php endif; ?>
+        <a href="<?= e(logoutRoute()) ?>"
+           class="btn btn-outline-danger btn-sm d-inline-flex align-items-center gap-2 px-3 app-dashboard-logout-btn">
+            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+    <?php
+}
+
 function renderDashboardHeader(array $user, string $title, string $subtitle = ''): void
 {
     ?>

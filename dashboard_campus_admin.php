@@ -53,16 +53,8 @@ renderCampusAdminDashboardHeader(
     $rejectedProposals
 );
 
-$logoutUrl = logoutRoute();
+renderDashboardLogoutAction();
 ?>
-
-<div class="d-flex justify-content-end align-items-center mb-2 app-campus-admin-action-bar">
-    <a href="<?= e($logoutUrl) ?>"
-       class="btn btn-sm btn-warning fw-semibold app-logout-btn d-inline-flex align-items-center gap-2">
-        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
-        <span>Logout</span>
-    </a>
-</div>
 
 <?php if ($message = flashMessage('success')): ?>
     <div class="alert alert-success alert-dismissible fade show mb-2 py-2" role="alert">
