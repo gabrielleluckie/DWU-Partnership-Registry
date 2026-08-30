@@ -27,16 +27,27 @@ $slots = [
 $slides = [];
 $usedFiles = [];
 
-foreach ($slots as $slot) {
-    $found = null;
-
+$findSlotFile = static function (string $dir, string $stem, array $extensions): ?string {
     foreach ($extensions as $ext) {
-        $filename = $slot['stem'] . '.' . $ext;
-        if (is_file($slideshowDir . DIRECTORY_SEPARATOR . $filename)) {
-            $found = $filename;
-            break;
+        $filename = $stem . '.' . $ext;
+        if (is_file($dir . DIRECTORY_SEPARATOR . $filename)) {
+            return $filename;
         }
     }
+
+    // Windows often hides ".jpg", so "slide-1.jpg" is saved as "slide-1.jpg.jpg".
+    $matches = glob($dir . DIRECTORY_SEPARATOR . $stem . '.*') ?: [];
+    foreach ($matches as $path) {
+        if (is_file($path) && preg_match('/\.(jpe?g|png|webp|gif)$/i', $path) === 1) {
+            return basename($path);
+        }
+    }
+
+    return null;
+};
+
+foreach ($slots as $slot) {
+    $found = $findSlotFile($slideshowDir, $slot['stem'], $extensions);
 
     if ($found !== null) {
         $usedFiles[] = $found;
@@ -81,12 +92,9 @@ if (is_dir($slideshowDir)) {
         ];
     }
 }
-
-$slideCount = count($slides);
 ?>
 <section class="campus-hero-slideshow"
          data-campus-slideshow
-         tabindex="0"
          aria-roledescription="carousel"
          aria-label="Partnership photo slideshow">
     <div class="campus-hero-photos">
@@ -110,33 +118,5 @@ $slideCount = count($slides);
                 <?php endif; ?>
             </figure>
         <?php endforeach; ?>
-
-        <?php if ($slideCount > 1): ?>
-            <div class="campus-hero-controls">
-                <button type="button" class="campus-hero-nav" data-slide-prev aria-label="Previous partnership photo">
-                    <i class="bi bi-chevron-left" aria-hidden="true"></i>
-                </button>
-                <div class="campus-hero-dots" role="tablist" aria-label="Choose partnership photo">
-                    <?php foreach ($slides as $index => $slide): ?>
-                        <button type="button"
-                                class="campus-hero-dot<?= $index === 0 ? ' is-active' : '' ?>"
-                                data-slide-dot="<?= (int) $index ?>"
-                                role="tab"
-                                aria-label="Show <?= e($slide['label']) ?>"
-                                aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"></button>
-                    <?php endforeach; ?>
-                </div>
-                <button type="button" class="campus-hero-nav" data-slide-next aria-label="Next partnership photo">
-                    <i class="bi bi-chevron-right" aria-hidden="true"></i>
-                </button>
-                <button type="button"
-                        class="campus-hero-pause"
-                        data-slide-pause
-                        aria-label="Pause slideshow"
-                        aria-pressed="false">
-                    <i class="bi bi-pause-fill" data-pause-icon aria-hidden="true"></i>
-                </button>
-            </div>
-        <?php endif; ?>
     </div>
 </section>

@@ -112,8 +112,6 @@ renderCampusAdminDashboardHeader(
 
 <?php require __DIR__ . '/includes/views/campus-admin-hero-slideshow.php'; ?>
 
-<?php renderCampusAdminProfileBar($user); ?>
-
 <div class="app-subnav app-subnav-bleed">
     <div class="container-fluid px-3 px-lg-4">
         <ul class="nav nav-tabs campus-admin-tabs mb-0" role="tablist">

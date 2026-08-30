@@ -27,6 +27,7 @@ $extraStylesheets = $extraStylesheets ?? [];
 $showNotificationBar = $notifications !== [];
 $primaryNotice = $notifications[0] ?? null;
 $logoutUrl = logoutRoute();
+$isCampusAdminHeader = str_contains((string) $bodyClass, 'campus-admin-theme');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -66,7 +67,7 @@ $logoutUrl = logoutRoute();
         <div class="container-fluid px-3 px-lg-4 py-2">
 
             <!-- Brand -->
-            <a class="navbar-brand app-navbar-brand d-flex align-items-center gap-3 me-lg-4"
+            <a class="navbar-brand app-navbar-brand d-flex align-items-center gap-3 me-lg-4 <?= $isCampusAdminHeader ? 'order-1' : '' ?>"
                href="<?= e(dashboardForRole($user['role'] ?? '') ?? loginRoute()) ?>">
                 <img src="<?= e($logoUrl) ?>"
                      alt="Divine Word University"
@@ -78,8 +79,12 @@ $logoutUrl = logoutRoute();
                 </span>
             </a>
 
+            <?php if ($isCampusAdminHeader): ?>
+                <?php require __DIR__ . '/views/campus-admin-profile-bar.php'; ?>
+            <?php endif; ?>
+
             <!-- Mobile toggle -->
-            <button class="navbar-toggler app-navbar-toggler border-0 ms-auto"
+            <button class="navbar-toggler app-navbar-toggler border-0 <?= $isCampusAdminHeader ? 'order-3' : 'ms-auto' ?>"
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#appNavbarCollapse"
@@ -90,7 +95,7 @@ $logoutUrl = logoutRoute();
             </button>
 
             <!-- Collapsible actions -->
-            <div class="collapse navbar-collapse" id="appNavbarCollapse">
+            <div class="collapse navbar-collapse <?= $isCampusAdminHeader ? 'campus-admin-header-collapse order-4 order-lg-2' : '' ?>" id="appNavbarCollapse">
                 <div class="navbar-nav ms-lg-auto align-items-lg-center gap-lg-2 py-2 py-lg-0 w-100 w-lg-auto">
 
                     <!-- Page context (visible on mobile in collapse) -->
@@ -181,6 +186,7 @@ $logoutUrl = logoutRoute();
                         </div>
                     </div>
 
+                    <?php if (!$isCampusAdminHeader): ?>
                     <!-- User profile + logout -->
                     <div class="nav-item d-flex align-items-center gap-2 ms-lg-2 app-user-nav-cluster">
                         <div class="app-user-summary d-none d-lg-block text-end">
@@ -258,6 +264,7 @@ $logoutUrl = logoutRoute();
                             <i class="bi bi-box-arrow-right me-1"></i> Logout
                         </a>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

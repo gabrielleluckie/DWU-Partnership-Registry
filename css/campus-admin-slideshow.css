@@ -23,15 +23,6 @@ html:has(body.app-shell.campus-admin-theme) {
     box-shadow: 0 8px 28px rgba(6, 38, 22, 0.18);
 }
 
-.campus-hero-slideshow:focus {
-    outline: none;
-}
-
-.campus-hero-slideshow:focus-visible {
-    outline: 2px solid var(--hero-gold);
-    outline-offset: -2px;
-}
-
 @media (min-width: 992px) {
     .campus-hero-slideshow {
         margin-top: -1rem;
@@ -120,72 +111,6 @@ html:has(body.app-shell.campus-admin-theme) {
     font-size: 0.75rem;
 }
 
-.campus-hero-controls {
-    position: absolute;
-    left: 50%;
-    bottom: 0.9rem;
-    transform: translateX(-50%);
-    z-index: 4;
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.35rem 0.5rem;
-    border-radius: 999px;
-    background: rgba(6, 38, 22, 0.55);
-    backdrop-filter: blur(6px);
-}
-
-.campus-hero-nav,
-.campus-hero-pause,
-.campus-hero-dot {
-    border: 0;
-    cursor: pointer;
-}
-
-.campus-hero-nav,
-.campus-hero-pause {
-    width: 2rem;
-    height: 2rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999px;
-    background: transparent;
-    color: #fff;
-    border: 1px solid rgba(232, 180, 10, 0.55);
-    transition: background 0.2s ease, transform 0.15s ease;
-}
-
-.campus-hero-nav:hover,
-.campus-hero-pause:hover,
-.campus-hero-nav:focus-visible,
-.campus-hero-pause:focus-visible {
-    background: var(--hero-green-mid);
-    outline: none;
-    transform: scale(1.06);
-}
-
-.campus-hero-dots {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0 0.2rem;
-}
-
-.campus-hero-dot {
-    width: 0.55rem;
-    height: 0.55rem;
-    padding: 0;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.45);
-    transition: background 0.2s ease, width 0.2s ease;
-}
-
-.campus-hero-dot.is-active {
-    width: 1.15rem;
-    background: var(--hero-gold);
-}
-
 @media (max-width: 575.98px) {
     .campus-hero-photos {
         min-height: 14rem;
@@ -199,8 +124,7 @@ html:has(body.app-shell.campus-admin-theme) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .campus-hero-slide,
-    .campus-hero-dot {
+    .campus-hero-slide {
         transition: none;
     }
 }

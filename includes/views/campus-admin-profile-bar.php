@@ -9,7 +9,7 @@
 $photoInputId = 'campusAdminProfilePhotoInput';
 $currentUri = (string) ($_SERVER['REQUEST_URI'] ?? routePath('dashboard/campus-admin'));
 ?>
-<div class="campus-admin-profile-bar">
+<div class="campus-admin-profile-bar campus-admin-header-profile">
     <div class="campus-admin-profile-identity">
         <form method="post"
               action="<?= e(profilePhotoUploadAction()) ?>"
@@ -47,12 +47,6 @@ $currentUri = (string) ($_SERVER['REQUEST_URI'] ?? routePath('dashboard/campus-a
                     <span aria-hidden="true"> · </span><?= e($user['campus']) ?>
                 <?php endif; ?>
             </p>
-            <button type="button"
-                    class="btn btn-sm btn-outline-secondary mt-2 campus-admin-change-photo-btn"
-                    data-profile-photo-trigger="<?= e($photoInputId) ?>">
-                <i class="bi bi-image me-1"></i>
-                <?= !empty($user['has_photo']) ? 'Change photo' : 'Add profile photo' ?>
-            </button>
         </div>
     </div>
 

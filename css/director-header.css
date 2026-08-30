@@ -148,10 +148,6 @@
     background: #006633;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
-    border: 2px solid rgba(248, 165, 29, 0.75);
-    background: #006633;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
 
 .app-user-trigger:hover .app-user-avatar {
     border-color: #f8a51d;

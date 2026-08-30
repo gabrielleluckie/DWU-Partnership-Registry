@@ -124,14 +124,18 @@ $renderSectionHeader = static function (string $letter, string $title, string $s
 };
 ?>
 
-<link rel="stylesheet" href="<?= e(assetUrl('css/campus-intake-form.css')) ?>">
+<?php
+$intakeCss = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'campus-intake-form.css';
+$intakeCssVersion = is_file($intakeCss) ? (string) filemtime($intakeCss) : (string) time();
+?>
+<link rel="stylesheet" href="<?= e(assetUrl('css/campus-intake-form.css') . '?v=' . $intakeCssVersion) ?>">
 
 <div class="partnership-form-shell p-2 p-lg-3">
 <div class="row g-3">
 
     <!-- Sticky vertical stepper / jump nav -->
-    <div class="col-lg-2 col-xl-2">
-        <div class="partnership-stepper-card partnership-stepper-card sticky-top rounded-3 shadow-sm p-2">
+    <div class="col-lg-auto">
+        <div class="partnership-stepper-card sticky-top rounded-3 shadow-sm p-2">
             <p class="text-uppercase text-muted fw-bold mb-1 px-1 partnership-stepper-label">
                 <i class="bi bi-signpost-split me-1"></i> Jump to Section
             </p>
@@ -148,7 +152,7 @@ $renderSectionHeader = static function (string $letter, string $title, string $s
     </div>
 
     <!-- Main form column -->
-    <div class="col-lg-10 col-xl-10">
+    <div class="col-lg">
         <form id="partnershipForm"
               action="<?= e(routePath('dashboard/campus-admin') . '?tab=submit') ?>"
               method="post"
