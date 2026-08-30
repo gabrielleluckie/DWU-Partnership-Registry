@@ -177,154 +177,177 @@ body.app-shell .review-empty {
     font-size: 0.875rem;
 }
 
-/* ── Partnership form shell (submit tab) ── */
+/* ── Partnership form shell (submit tab) — white form, black text ── */
 body.app-shell .partnership-form-shell {
-    background: transparent;
-    color: var(--ca-text-primary);
+    background: #ffffff;
+    color: #000000;
+    color-scheme: light;
 }
 
 body.app-shell .partnership-stepper-card {
-    background: var(--ca-bg-card);
-    border: 1px solid var(--ca-border);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
 body.app-shell #partnership-scrollspy .nav-link {
-    color: var(--ca-text-secondary);
+    color: #334155;
 }
 
 body.app-shell #partnership-scrollspy .nav-link:hover {
-    background: rgba(2, 132, 199, 0.1);
-    color: var(--ca-text-primary);
+    background: rgba(2, 132, 199, 0.06);
+    color: #000000;
 }
 
 body.app-shell #partnership-scrollspy .nav-link.active {
-    background: rgba(2, 132, 199, 0.15);
-    color: #7dd3fc;
+    background: rgba(2, 132, 199, 0.1);
+    color: #0369a1;
     border-left-color: var(--ca-accent);
 }
 
 body.app-shell .partnership-form-shell .form-section {
-    background: var(--ca-bg-card);
-    border: 1px solid var(--ca-border) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    background: #ffffff;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    color: #000000;
 }
 
 body.app-shell .partnership-form-shell .form-section:hover {
-    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.28);
-    border-color: var(--ca-border-strong) !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+    border-color: #cbd5e1 !important;
 }
 
 body.app-shell .section-header-band {
-    border-bottom-color: var(--ca-border);
+    border-bottom-color: #e2e8f0;
 }
 
 body.app-shell .section-header-title {
-    color: var(--ca-text-primary);
+    color: #000000;
 }
 
 body.app-shell .section-header-subtitle {
-    color: var(--ca-text-secondary);
+    color: #475569;
 }
 
 body.app-shell .section-header-icon {
-    background: linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(27, 57, 62, 0.5));
-    color: #7dd3fc;
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.15), rgba(5, 150, 105, 0.12));
+    color: #0369a1;
 }
 
 body.app-shell .partnership-form-shell .form-label,
-body.app-shell .partnership-form-shell .form-check-label {
-    color: var(--ca-text-secondary) !important;
+body.app-shell .partnership-form-shell .form-check-label,
+body.app-shell .partnership-form-shell .form-label.text-secondary,
+body.app-shell .partnership-form-shell .form-section h3,
+body.app-shell .partnership-form-shell .form-section h6,
+body.app-shell .partnership-form-shell .form-section p,
+body.app-shell .partnership-form-shell .form-section .text-secondary,
+body.app-shell .partnership-form-shell .partnership-stepper-label {
+    color: #000000 !important;
 }
 
 body.app-shell .partnership-form-shell .form-control,
-body.app-shell .partnership-form-shell .form-select {
-    background: var(--ca-bg-input);
-    border-color: var(--ca-border-strong);
-    color: var(--ca-text-primary);
+body.app-shell .partnership-form-shell .form-select,
+body.app-shell .partnership-form-shell input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]),
+body.app-shell .partnership-form-shell select,
+body.app-shell .partnership-form-shell textarea {
+    background: #ffffff !important;
+    border-color: #cbd5e1;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000;
 }
 
-body.app-shell .partnership-form-shell .form-control::placeholder {
-    color: rgba(148, 163, 184, 0.55);
+body.app-shell .partnership-form-shell .form-control::placeholder,
+body.app-shell .partnership-form-shell textarea::placeholder {
+    color: #64748b;
+    -webkit-text-fill-color: #64748b;
+    opacity: 1;
 }
 
 body.app-shell .partnership-form-shell .form-control:focus,
-body.app-shell .partnership-form-shell .form-select:focus {
-    background: var(--ca-bg-input);
+body.app-shell .partnership-form-shell .form-select:focus,
+body.app-shell .partnership-form-shell input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]):focus,
+body.app-shell .partnership-form-shell select:focus,
+body.app-shell .partnership-form-shell textarea:focus {
+    background: #ffffff !important;
     border-color: var(--ca-accent);
-    color: var(--ca-text-primary);
-    box-shadow: 0 0 0 0.2rem rgba(2, 132, 199, 0.2);
+    color: #000000 !important;
+    box-shadow: 0 0 0 0.2rem rgba(2, 132, 199, 0.18);
 }
 
 body.app-shell .partnership-form-shell .form-control:read-only,
 body.app-shell .partnership-form-shell .form-control:disabled {
-    background: rgba(22, 32, 48, 0.8);
-    color: var(--ca-text-secondary);
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    -webkit-text-fill-color: #334155;
 }
 
 body.app-shell .partnership-form-shell .form-text,
 body.app-shell .partnership-form-shell .text-muted {
-    color: var(--ca-text-secondary) !important;
+    color: #334155 !important;
 }
 
 body.app-shell .partnership-form-shell .bg-light {
-    background: rgba(22, 32, 48, 0.6) !important;
-    border-color: var(--ca-border) !important;
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #000000;
 }
 
 body.app-shell .partnership-form-shell .border {
-    border-color: var(--ca-border) !important;
+    border-color: #e2e8f0 !important;
 }
 
-body.app-shell .selection-tile {
-    background: var(--ca-bg-input) !important;
-    border-color: var(--ca-border-strong) !important;
-    color: var(--ca-text-secondary) !important;
+body.app-shell .partnership-form-shell .selection-tile {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #000000 !important;
 }
 
-body.app-shell .selection-tile:hover {
-    background: rgba(2, 132, 199, 0.08) !important;
+body.app-shell .partnership-form-shell .selection-tile:hover {
+    background: rgba(2, 132, 199, 0.04) !important;
     border-color: rgba(2, 132, 199, 0.45) !important;
-    color: #7dd3fc !important;
+    color: #0369a1 !important;
 }
 
-body.app-shell .btn-check:checked + .selection-tile {
-    background: rgba(2, 132, 199, 0.15) !important;
+body.app-shell .partnership-form-shell .btn-check:checked + .selection-tile {
+    background: rgba(2, 132, 199, 0.1) !important;
     border-color: var(--ca-accent) !important;
-    color: #7dd3fc !important;
+    color: #0369a1 !important;
 }
 
-body.app-shell .drop-zone {
-    background: rgba(22, 32, 48, 0.5) !important;
-    border-color: var(--ca-border-strong) !important;
+body.app-shell .partnership-form-shell .drop-zone {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #000000;
 }
 
-body.app-shell .drop-zone:hover,
-body.app-shell .drop-zone.is-dragover {
-    background: rgba(2, 132, 199, 0.08) !important;
+body.app-shell .partnership-form-shell .drop-zone:hover,
+body.app-shell .partnership-form-shell .drop-zone.is-dragover {
+    background: rgba(2, 132, 199, 0.04) !important;
     border-color: var(--ca-accent) !important;
 }
 
-body.app-shell .drop-zone .text-dark {
-    color: var(--ca-text-primary) !important;
+body.app-shell .partnership-form-shell .drop-zone .text-dark {
+    color: #000000 !important;
 }
 
-body.app-shell .admin-comment-card {
-    background: linear-gradient(160deg, rgba(2, 132, 199, 0.12) 0%, var(--ca-bg-card) 60%);
-    border-color: rgba(2, 132, 199, 0.35);
+body.app-shell .partnership-form-shell .admin-comment-card {
+    background: linear-gradient(160deg, rgba(2, 132, 199, 0.06) 0%, #ffffff 60%);
+    border-color: rgba(2, 132, 199, 0.25);
+    color: #000000;
 }
 
-body.app-shell .admin-comment-card h3 {
-    color: var(--ca-text-primary);
+body.app-shell .partnership-form-shell .admin-comment-card h3 {
+    color: #000000;
 }
 
-body.app-shell .director-review-card {
-    background: rgba(22, 32, 48, 0.7);
-    border-color: var(--ca-border);
+body.app-shell .partnership-form-shell .director-review-card {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #000000;
 }
 
-body.app-shell .director-review-card h3 {
-    color: var(--ca-text-primary);
+body.app-shell .partnership-form-shell .director-review-card h3 {
+    color: #000000;
 }
 
 body.app-shell .partnership-form-banner,
@@ -338,9 +361,10 @@ body.app-shell .partnership-instruction-bar {
 }
 
 body.app-shell .partnership-action-bar {
-    background: rgba(30, 43, 56, 0.95);
-    border-color: var(--ca-border);
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.08);
+    color: #000000;
 }
 
 body.app-shell main.campus-admin-main {
@@ -348,26 +372,28 @@ body.app-shell main.campus-admin-main {
 }
 
 body.app-shell .partnership-action-bar .btn-outline-secondary {
-    border-color: var(--ca-border-strong);
-    color: var(--ca-text-secondary);
+    border-color: #cbd5e1;
+    color: #000000;
 }
 
 body.app-shell .partnership-action-bar .btn-outline-secondary:hover {
-    background: var(--ca-bg-card-hover);
-    color: var(--ca-text-primary);
-    border-color: var(--ca-text-secondary);
+    background: #f1f5f9;
+    color: #000000;
+    border-color: #94a3b8;
 }
 
 body.app-shell .partnership-form-shell .form-check {
-    border-color: var(--ca-border) !important;
+    border-color: #e2e8f0 !important;
+    color: #000000;
 }
 
 body.app-shell .partnership-form-shell .bg-white {
-    background: var(--ca-bg-input) !important;
+    background: #ffffff !important;
+    color: #000000;
 }
 
 body.app-shell .partnership-form-shell h6.text-secondary {
-    color: var(--ca-text-secondary) !important;
+    color: #000000 !important;
 }
 
 /* ── Site footer blend ── */
@@ -506,4 +532,483 @@ body.app-shell .app-registry-logout-btn {
 
 body.app-shell .app-registry-logout-btn:hover {
     box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+/* ── Campus Admin pages — white background, black text ── */
+body.app-shell.campus-admin-theme {
+    --ca-bg-primary: #ffffff;
+    --ca-bg-card: #ffffff;
+    --ca-bg-card-hover: #f8fafc;
+    --ca-bg-input: #ffffff;
+    --ca-text-primary: #000000;
+    --ca-text-secondary: #334155;
+    --ca-border: #e2e8f0;
+    --ca-border-strong: #cbd5e1;
+
+    background-color: #ffffff !important;
+    background-image: none !important;
+    color: #000000 !important;
+    color-scheme: light;
+}
+
+html:has(body.app-shell.campus-admin-theme) {
+    background: #ffffff;
+}
+
+body.app-shell.campus-admin-theme main,
+body.app-shell.campus-admin-theme main.campus-admin-main {
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+
+body.app-shell.campus-admin-theme .app-subnav {
+    background: #ffffff;
+    border-bottom-color: #e2e8f0;
+}
+
+body.app-shell.campus-admin-theme .app-subnav-bleed {
+    margin-top: 0;
+}
+
+body.app-shell.campus-admin-theme .app-subnav .nav-link {
+    color: #334155 !important;
+}
+
+body.app-shell.campus-admin-theme .app-subnav .nav-link:hover,
+body.app-shell.campus-admin-theme .app-subnav .nav-link.active {
+    color: #000000 !important;
+}
+
+body.app-shell.campus-admin-theme .app-page-heading h1 {
+    color: #000000 !important;
+}
+
+body.app-shell.campus-admin-theme .app-page-heading p,
+body.app-shell.campus-admin-theme .app-page-heading .text-secondary {
+    color: #334155 !important;
+}
+
+body.app-shell.campus-admin-theme .alert-success {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #065f46;
+}
+
+body.app-shell.campus-admin-theme .alert-danger {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #9f1239;
+}
+
+body.app-shell.campus-admin-theme .review-panel {
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+body.app-shell.campus-admin-theme .review-panel-header {
+    background: #f8fafc;
+}
+
+body.app-shell.campus-admin-theme .review-item .review-date {
+    color: #64748b;
+}
+
+body.app-shell.campus-admin-theme .badge-approved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+body.app-shell.campus-admin-theme .badge-rejected {
+    background: #ffe4e6;
+    color: #9f1239;
+}
+
+body.app-shell.campus-admin-theme .review-rejection-note {
+    color: #9f1239;
+}
+
+body.app-shell.campus-admin-theme .app-dashboard-action-bar .btn-outline-success {
+    --bs-btn-color: #047857;
+    --bs-btn-border-color: #10b981;
+    --bs-btn-hover-color: #fff;
+}
+
+body.app-shell.campus-admin-theme .app-dashboard-logout-btn {
+    --bs-btn-color: #b91c1c;
+    --bs-btn-border-color: #ef4444;
+}
+
+body.app-shell.campus-admin-theme .nav-tabs {
+    --bs-nav-tabs-link-active-color: #000000;
+}
+
+body.app-shell.campus-admin-theme .nav-tabs .nav-link {
+    color: #334155;
+}
+
+body.app-shell.campus-admin-theme .nav-tabs .nav-link:hover,
+body.app-shell.campus-admin-theme .nav-tabs .nav-link.active {
+    color: #000000;
+}
+
+body.app-shell.campus-admin-theme .site-footer {
+    background-color: #2c333d !important;
+    border-top: 3px solid #17a2b8;
+    color: #b8bec6;
+}
+
+body.app-shell.campus-admin-theme .site-footer h3,
+body.app-shell.campus-admin-theme .site-footer .footer-col h3 {
+    color: #ffffff;
+}
+
+body.app-shell.campus-admin-theme .site-footer a {
+    color: #3498db;
+}
+
+body.app-shell.campus-admin-theme .site-footer a:hover {
+    color: #3498db;
+}
+
+body.app-shell.campus-admin-theme .site-footer .footer-col p,
+body.app-shell.campus-admin-theme .site-footer .footer-contact-line {
+    color: #b8bec6;
+}
+
+body.app-shell.campus-admin-theme .partnership-navbar {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+body.app-shell.campus-admin-theme .partnership-form-title,
+body.app-shell.campus-admin-theme .partnership-brand-division {
+    color: #000000 !important;
+}
+
+body.app-shell.campus-admin-theme .partnership-navbar-toggler {
+    border-color: #cbd5e1 !important;
+}
+
+body.app-shell.campus-admin-theme .partnership-navbar-toggler .navbar-toggler-icon {
+    filter: invert(1);
+}
+
+body.app-shell.campus-admin-theme .partnership-instruction-bar {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #000000 !important;
+}
+
+body.app-shell.campus-admin-theme .partnership-instruction-text {
+    color: #000000 !important;
+}
+
+body.app-shell.campus-admin-theme .partnership-instruction-icon {
+    color: #0369a1;
+}
+
+body.app-shell.campus-admin-theme .partnership-instruction-bar .btn-close {
+    filter: invert(1) grayscale(1);
+    opacity: 0.7;
+}
+
+body.app-shell.campus-admin-theme .campus-admin-profile-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.35rem 0 1rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+body.app-shell.campus-admin-theme .campus-admin-profile-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    min-width: 0;
+}
+
+body.app-shell.campus-admin-theme .campus-admin-photo-trigger {
+    position: relative;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+body.app-shell.campus-admin-theme .campus-admin-profile-photo {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #006633;
+    background: #f1f5f9;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+    display: block;
+}
+
+body.app-shell.campus-admin-theme .campus-admin-photo-edit {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 1.55rem;
+    height: 1.55rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #006633;
+    color: #ffffff;
+    font-size: 0.7rem;
+    border: 2px solid #ffffff;
+}
+
+body.app-shell.campus-admin-theme .campus-admin-photo-trigger:hover .campus-admin-photo-edit,
+body.app-shell.campus-admin-theme .campus-admin-photo-trigger:focus-visible .campus-admin-photo-edit {
+    background: #004d26;
+}
+
+body.app-shell.campus-admin-theme .campus-admin-profile-kicker {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+body.app-shell.campus-admin-theme .campus-admin-profile-name {
+    color: #000000;
+    font-weight: 700;
+}
+
+body.app-shell.campus-admin-theme .campus-admin-profile-meta {
+    color: #334155;
+    font-size: 0.8125rem;
+}
+
+body.app-shell.campus-admin-theme .campus-admin-change-photo-btn {
+    color: #000000;
+    border-color: #cbd5e1;
+}
+
+body.app-shell.campus-admin-theme .ca-agreements-status-select {
+    max-width: 16rem;
+    background: #ffffff;
+    color: #000000;
+    border-color: #cbd5e1;
+}
+
+body.app-shell.campus-admin-theme .ca-agreements-table {
+    color: #000000;
+}
+
+body.app-shell.campus-admin-theme .ca-agreements-table thead th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #334155;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+body.app-shell.campus-admin-theme .ca-agreements-table td {
+    border-bottom: 1px solid #e2e8f0;
+    color: #000000;
+    vertical-align: middle;
+}
+
+body.app-shell.campus-admin-theme .ca-agreement-detail {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem;
+}
+
+body.app-shell.campus-admin-theme .ca-agreement-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+body.app-shell.campus-admin-theme .ca-agreement-back {
+    color: #000000;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+body.app-shell.campus-admin-theme .ca-agreement-back:hover {
+    text-decoration: underline;
+}
+
+body.app-shell.campus-admin-theme .ca-agreement-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: 1rem;
+    margin: 0 0 1.25rem;
+}
+
+body.app-shell.campus-admin-theme .ca-agreement-meta dt {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.2rem;
+}
+
+body.app-shell.campus-admin-theme .ca-agreement-meta dd {
+    margin: 0;
+    color: #000000;
+}
+
+body.app-shell.campus-admin-theme .ca-agreement-scope,
+body.app-shell.campus-admin-theme .ca-agreement-document {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+}
+
+body.app-shell.campus-admin-theme .ca-agreement-scope p {
+    color: #000000;
+    white-space: pre-wrap;
+}
+
+body.app-shell .ca-agreements-panel .table-responsive {
+    padding: 0;
+}
+
+body.app-shell.campus-admin-theme .app-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    color: #000000;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+body.app-shell.campus-admin-theme .app-card-header {
+    background: #f8fafc;
+    border-bottom-color: #e2e8f0;
+}
+
+body.app-shell.campus-admin-theme .app-card h2,
+body.app-shell.campus-admin-theme .app-card h3,
+body.app-shell.campus-admin-theme .app-card .h3,
+body.app-shell.campus-admin-theme .app-card .h5 {
+    color: #000000;
+}
+
+body.app-shell.campus-admin-theme .text-secondary {
+    color: #334155 !important;
+}
+
+body.app-shell.campus-admin-theme .form-control,
+body.app-shell.campus-admin-theme .form-select {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #000000;
+}
+
+body.app-shell.campus-admin-theme .form-control:focus,
+body.app-shell.campus-admin-theme .form-select:focus {
+    background: #ffffff;
+    border-color: #006633;
+    color: #000000;
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 51, 0.15);
+}
+
+body.app-shell.campus-admin-theme .registry-listing-table {
+    color: #000000;
+    --bs-table-bg: #ffffff;
+    --bs-table-hover-bg: #f8fafc;
+}
+
+body.app-shell.campus-admin-theme .registry-listing-table thead th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #334155;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+body.app-shell.campus-admin-theme .registry-listing-table td {
+    color: #000000;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+body.app-shell.campus-admin-theme .registry-agreement-name {
+    color: #000000;
+}
+
+body.app-shell.campus-admin-theme .agreement-lifespan {
+    color: #334155;
+}
+
+body.app-shell.campus-admin-theme .agreement-lifespan .text-warning-emphasis {
+    color: #92400e !important;
+}
+
+body.app-shell.campus-admin-theme .registry-detail {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #000000;
+}
+
+body.app-shell.campus-admin-theme .registry-detail-toolbar {
+    background: #f8fafc;
+    border-bottom-color: #e2e8f0;
+}
+
+body.app-shell.campus-admin-theme .registry-detail-back {
+    color: #000000;
+}
+
+body.app-shell.campus-admin-theme .registry-detail-back:hover {
+    color: #000000;
+}
+
+body.app-shell.campus-admin-theme .registry-detail-kicker,
+body.app-shell.campus-admin-theme .registry-detail-subtitle {
+    color: #334155;
+}
+
+body.app-shell.campus-admin-theme .registry-detail-title h2 {
+    color: #000000;
+}
+
+body.app-shell.campus-admin-theme .registry-detail-table th {
+    color: #334155;
+    border-bottom-color: #e2e8f0;
+}
+
+body.app-shell.campus-admin-theme .registry-detail-table td {
+    color: #000000;
+    border-bottom-color: #e2e8f0;
+}
+
+body.app-shell.campus-admin-theme .registry-detail-table a,
+body.app-shell.campus-admin-theme .registry-detail-note a:not(.btn) {
+    color: #0369a1;
+}
+
+body.app-shell.campus-admin-theme .registry-detail-note h3 {
+    color: #334155;
+}
+
+body.app-shell.campus-admin-theme .registry-detail-note p,
+body.app-shell.campus-admin-theme .registry-detail-history li {
+    color: #000000;
+}
+
+body.app-shell.campus-admin-theme .registry-detail-empty {
+    color: #334155;
+}
+
+body.app-shell.campus-admin-theme .registry-detail-history strong {
+    color: #000000;
 }

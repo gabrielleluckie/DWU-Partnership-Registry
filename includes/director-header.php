@@ -50,6 +50,13 @@ $logoutUrl = logoutRoute();
             }
         };
     </script>
+    <?php if (str_contains((string) $bodyClass, 'campus-admin-theme')): ?>
+        <?php
+        $campusAdminCss = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'campus-admin-dashboard.css';
+        $campusAdminCssVersion = is_file($campusAdminCss) ? (string) filemtime($campusAdminCss) : (string) time();
+        ?>
+        <link rel="stylesheet" href="<?= e(assetUrl('css/campus-admin-dashboard.css') . '?v=' . $campusAdminCssVersion) ?>">
+    <?php endif; ?>
 </head>
 <body class="d-flex flex-column min-vh-100 <?= e($bodyClass) ?>">
 
@@ -157,10 +164,17 @@ $logoutUrl = logoutRoute();
                                     <p class="text-muted small mb-0">No new notifications.</p>
                                 <?php else: ?>
                                     <?php foreach ($notifications as $notice): ?>
-                                        <div class="director-notification-item">
-                                            <strong><?= e($notice['title']) ?></strong>
-                                            <span><?= e($notice['detail']) ?></span>
-                                        </div>
+                                        <?php if (!empty($notice['href'])): ?>
+                                            <a href="<?= e($notice['href']) ?>" class="director-notification-item director-notification-link">
+                                                <strong><?= e($notice['title']) ?></strong>
+                                                <span><?= e($notice['detail']) ?></span>
+                                            </a>
+                                        <?php else: ?>
+                                            <div class="director-notification-item">
+                                                <strong><?= e($notice['title']) ?></strong>
+                                                <span><?= e($notice['detail']) ?></span>
+                                            </div>
+                                        <?php endif; ?>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </div>
@@ -209,6 +223,24 @@ $logoutUrl = logoutRoute();
                                     </div>
                                 </div>
                                 <div class="director-dropdown-footer">
+                                    <form method="post"
+                                          action="<?= e(profilePhotoUploadAction()) ?>"
+                                          enctype="multipart/form-data"
+                                          class="mb-2">
+                                        <input type="hidden" name="redirect_to" value="<?= e((string) ($_SERVER['REQUEST_URI'] ?? '')) ?>">
+                                        <input type="file"
+                                               id="headerProfilePhotoInput"
+                                               name="profile_photo"
+                                               class="d-none"
+                                               accept="image/jpeg,image/png,image/webp,image/gif"
+                                               data-profile-photo-input>
+                                        <button type="button"
+                                                class="btn btn-outline-light btn-sm w-100"
+                                                data-profile-photo-trigger="headerProfilePhotoInput">
+                                            <i class="bi bi-camera me-1"></i>
+                                            <?= !empty($user['has_photo']) ? 'Change photo' : 'Add profile photo' ?>
+                                        </button>
+                                    </form>
                                     <a href="<?= e($logoutUrl) ?>" class="director-signout-link btn btn-danger btn-sm w-100">
                                         <i class="bi bi-box-arrow-right me-1"></i> Logout
                                     </a>
@@ -236,14 +268,28 @@ $logoutUrl = logoutRoute();
              role="alert"
              id="appNotificationBar">
             <div class="container-fluid px-3 px-lg-4 d-flex align-items-start gap-2">
-                <i class="bi bi-bell-fill app-notification-icon flex-shrink-0" aria-hidden="true"></i>
-                <div class="flex-grow-1">
-                    <strong class="d-block small"><?= e($primaryNotice['title']) ?></strong>
-                    <span class="small opacity-75"><?= e($primaryNotice['detail']) ?></span>
-                    <?php if ($notificationCount > 1): ?>
-                        <span class="badge bg-warning text-dark ms-2"><?= (int) $notificationCount ?> total</span>
-                    <?php endif; ?>
-                </div>
+                <?php if (!empty($primaryNotice['href']) && directorCurrentSection() !== 'review'): ?>
+                    <a href="<?= e($primaryNotice['href']) ?>"
+                       class="app-notification-bar-link flex-grow-1 d-flex align-items-start gap-2 text-decoration-none">
+                        <i class="bi bi-bell-fill app-notification-icon flex-shrink-0" aria-hidden="true"></i>
+                        <span class="flex-grow-1">
+                            <strong class="d-block small"><?= e($primaryNotice['title']) ?></strong>
+                            <span class="small opacity-75"><?= e($primaryNotice['detail']) ?></span>
+                            <?php if ($notificationCount > 1): ?>
+                                <span class="badge bg-warning text-dark ms-2"><?= (int) $notificationCount ?> total</span>
+                            <?php endif; ?>
+                        </span>
+                    </a>
+                <?php else: ?>
+                    <i class="bi bi-bell-fill app-notification-icon flex-shrink-0" aria-hidden="true"></i>
+                    <div class="flex-grow-1">
+                        <strong class="d-block small"><?= e($primaryNotice['title']) ?></strong>
+                        <span class="small opacity-75"><?= e($primaryNotice['detail']) ?></span>
+                        <?php if ($notificationCount > 1): ?>
+                            <span class="badge bg-warning text-dark ms-2"><?= (int) $notificationCount ?> total</span>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
                 <button type="button"
                         class="btn-close btn-close-white"
                         data-bs-dismiss="alert"

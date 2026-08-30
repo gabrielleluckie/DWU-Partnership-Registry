@@ -136,3 +136,138 @@ body.app-shell .table-dark {
     --bs-table-bg: transparent;
     --bs-table-hover-bg: rgba(255, 255, 255, 0.04);
 }
+
+body.app-shell .registry-detail {
+    width: max-content;
+    max-width: 100%;
+    min-width: min(100%, 36rem);
+}
+
+body.app-shell .registry-detail-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem 1rem;
+    padding: 0.75rem 1.1rem;
+    border-bottom: 1px solid var(--app-border);
+    background: rgba(27, 57, 62, 0.15);
+}
+
+body.app-shell .registry-detail-toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+body.app-shell .registry-detail-back {
+    color: #e2e8f0;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-decoration: none;
+}
+
+body.app-shell .registry-detail-back:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+body.app-shell .registry-detail-body {
+    padding: 0.9rem 1.1rem 1.1rem;
+}
+
+body.app-shell .registry-detail-title {
+    margin-bottom: 0.75rem;
+}
+
+body.app-shell .registry-detail-kicker {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+body.app-shell .registry-detail-subtitle {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    margin-top: 0.2rem;
+}
+
+body.app-shell .registry-detail-table {
+    width: auto;
+    max-width: 100%;
+    border-collapse: collapse;
+}
+
+body.app-shell .registry-detail-table th,
+body.app-shell .registry-detail-table td {
+    padding: 0.38rem 0.85rem 0.38rem 0;
+    border-bottom: 1px solid var(--app-border);
+    vertical-align: top;
+    text-align: left;
+}
+
+body.app-shell .registry-detail-table th {
+    width: 8.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+body.app-shell .registry-detail-table td {
+    color: #ffffff;
+    font-size: 0.9rem;
+    padding-right: 1.5rem;
+}
+
+body.app-shell .registry-detail-table a,
+body.app-shell .registry-detail-note a:not(.btn) {
+    color: #7dd3fc;
+}
+
+body.app-shell .registry-detail-note {
+    margin-top: 0.85rem;
+}
+
+body.app-shell .registry-detail-note h3 {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin: 0 0 0.3rem;
+}
+
+body.app-shell .registry-detail-note p {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+}
+
+body.app-shell .registry-detail-empty {
+    margin-top: 0.85rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+body.app-shell .registry-detail-history {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+body.app-shell .registry-detail-history li {
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    line-height: 1.4;
+}
+
+body.app-shell .registry-detail-history li + li {
+    margin-top: 0.35rem;
+}
+
+body.app-shell .registry-detail-history strong {
+    color: #ffffff;
+    font-weight: 600;
+}

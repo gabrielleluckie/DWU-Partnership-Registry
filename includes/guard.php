@@ -317,12 +317,144 @@ function usersTableHasPasswordColumn(PDO $pdo): bool
     return usersTableMeta($pdo)['has_password'];
 }
 
+function defaultUserAvatarUrl(string $fullName): string
+{
+    return 'https://ui-avatars.com/api/?name='
+        . urlencode($fullName)
+        . '&background=006633&color=FFCC00&size=128&bold=true';
+}
+
+function profilePhotoDirectory(): string
+{
+    return dirname(__DIR__) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'profiles';
+}
+
+function userProfilePhotoRelativePath(int $userId): ?string
+{
+    $dir = profilePhotoDirectory();
+
+    foreach (['jpg', 'jpeg', 'png', 'webp', 'gif'] as $ext) {
+        $path = $dir . DIRECTORY_SEPARATOR . $userId . '.' . $ext;
+
+        if (is_file($path)) {
+            return 'uploads/profiles/' . $userId . '.' . $ext;
+        }
+    }
+
+    return null;
+}
+
+function userAvatarUrl(int $userId, string $fullName): string
+{
+    $relative = userProfilePhotoRelativePath($userId);
+
+    if ($relative === null) {
+        return defaultUserAvatarUrl($fullName);
+    }
+
+    $absolute = dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+    $version = is_file($absolute) ? (string) filemtime($absolute) : (string) time();
+
+    return assetUrl($relative) . '?v=' . $version;
+}
+
+function deleteUserProfilePhotos(int $userId): void
+{
+    $dir = profilePhotoDirectory();
+
+    foreach (['jpg', 'jpeg', 'png', 'webp', 'gif'] as $ext) {
+        $path = $dir . DIRECTORY_SEPARATOR . $userId . '.' . $ext;
+
+        if (is_file($path)) {
+            unlink($path);
+        }
+    }
+}
+
+function storeUserProfilePhoto(int $userId, array $file): string
+{
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        throw new InvalidArgumentException('Please choose a photo to upload.');
+    }
+
+    if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+        throw new InvalidArgumentException('Unable to upload the photo. Please try again.');
+    }
+
+    if (($file['size'] ?? 0) > 2 * 1024 * 1024) {
+        throw new InvalidArgumentException('Photo must be 2 MB or smaller.');
+    }
+
+    $tmpName = (string) ($file['tmp_name'] ?? '');
+    $info = $tmpName !== '' ? @getimagesize($tmpName) : false;
+
+    if ($info === false) {
+        throw new InvalidArgumentException('The selected file is not a valid image.');
+    }
+
+    $mime = (string) ($info['mime'] ?? '');
+    $extensions = [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+        'image/gif'  => 'gif',
+    ];
+
+    if (!isset($extensions[$mime])) {
+        throw new InvalidArgumentException('Use a JPG, PNG, WEBP, or GIF photo.');
+    }
+
+    $dir = profilePhotoDirectory();
+
+    if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
+        throw new RuntimeException('Unable to create the profile photo folder.');
+    }
+
+    deleteUserProfilePhotos($userId);
+
+    $filename = $userId . '.' . $extensions[$mime];
+    $targetPath = $dir . DIRECTORY_SEPARATOR . $filename;
+
+    if (!move_uploaded_file($tmpName, $targetPath)) {
+        throw new RuntimeException('Failed to store the profile photo.');
+    }
+
+    return 'uploads/profiles/' . $filename;
+}
+
+function profilePhotoUploadAction(): string
+{
+    return routePath('dashboard/profile-photo');
+}
+
+function safeProfilePhotoRedirect(array $user): string
+{
+    $fallback = dashboardForRole((string) ($user['role'] ?? '')) ?? loginRoute();
+    $requested = (string) ($_POST['redirect_to'] ?? '');
+
+    if ($requested === '') {
+        return $fallback;
+    }
+
+    $path = parse_url($requested, PHP_URL_PATH) ?? '';
+    $base = appBasePath();
+
+    if ($path === '' || ($base !== '' && !str_starts_with($path, $base))) {
+        return $fallback;
+    }
+
+    $query = parse_url($requested, PHP_URL_QUERY);
+
+    return $query ? $path . '?' . $query : $path;
+}
+
 function formatUserProfile(array $user): array
 {
     $fullName = trim($user['First_name'] . ' ' . $user['Last_name']);
+    $userId = (int) $user['User_ID'];
 
     return [
-        'id'           => (int) $user['User_ID'],
+        'id'           => $userId,
         'name'         => $fullName,
         'display_name' => strtoupper($user['Last_name']) . ', ' . $user['First_name'],
         'email'        => $user['Email'],
@@ -331,12 +463,11 @@ function formatUserProfile(array $user): array
         'campus_id'    => isset($user['Campus_ID']) && $user['Campus_ID'] !== null && $user['Campus_ID'] !== ''
             ? (int) $user['Campus_ID']
             : null,
-        'staff_id'     => 'USR-' . str_pad((string) $user['User_ID'], 4, '0', STR_PAD_LEFT),
+        'staff_id'     => 'USR-' . str_pad((string) $userId, 4, '0', STR_PAD_LEFT),
         'department'   => 'Office of Partnerships & Development',
         'last_login'   => date('Y-m-d H:i:s'),
-        'avatar'       => 'https://ui-avatars.com/api/?name='
-            . urlencode($fullName)
-            . '&background=006633&color=FFCC00&size=128&bold=true',
+        'avatar'       => userAvatarUrl($userId, $fullName),
+        'has_photo'    => userProfilePhotoRelativePath($userId) !== null,
     ];
 }
 
@@ -476,41 +607,45 @@ function setFlash(string $key, string $message): void
 }
 
 /**
- * In-memory proposal review queue (session). Campus Admin submissions land here only —
- * they are NOT written to partner/agreement/contact registry tables until the
- * Partnership Director completes the Active Partnership Entry Form.
+ * Proposal workflow — campus submissions and director review are persisted in the
+ * agreement table (Submitted / Approved / Rejected). Only the Active Partnership
+ * Entry Form creates registry agreements with Status = Active.
  */
 function initializeMockProposals(): void
 {
-    $queueVersion = 2;
-
-    if (($_SESSION['proposals_version'] ?? 0) < $queueVersion) {
-        $_SESSION['proposals'] = [];
-        $_SESSION['proposals_version'] = $queueVersion;
-    }
-
-    if (!isset($_SESSION['proposals'])) {
-        $_SESSION['proposals'] = [];
-    }
+    // Legacy no-op: proposals are database-backed.
 }
 
-function getProposalsByStatus(string $status): array
+function getProposalsByStatus(string $status, ?array $user = null): array
 {
-    initializeMockProposals();
+    global $pdo;
 
-    return array_values(array_filter(
-        $_SESSION['proposals'],
-        static fn(array $proposal): bool => $proposal['status'] === $status
-    ));
+    $dbStatus = proposalStatusFromSlug($status);
+    $campusId = null;
+
+    if ($user !== null && !in_array(strtolower($status), ['pending', 'submitted'], true)) {
+        $campusId = isset($user['campus_id']) && (int) $user['campus_id'] > 0
+            ? (int) $user['campus_id']
+            : null;
+    }
+
+    return fetchAgreementsByStatus($pdo, $dbStatus, $campusId);
 }
 
 function findProposalById(int $proposalId): ?array
 {
-    initializeMockProposals();
+    global $pdo;
 
-    foreach ($_SESSION['proposals'] as $proposal) {
-        if ((int) $proposal['id'] === $proposalId) {
-            return $proposal;
+    $agreementTable = agreementTableName($pdo);
+    if ($agreementTable === null || $proposalId <= 0) {
+        return null;
+    }
+
+    foreach ([Agreement::STATUS_SUBMITTED, Agreement::STATUS_APPROVED, Agreement::STATUS_REJECTED] as $status) {
+        foreach (fetchAgreementsByStatus($pdo, $status) as $proposal) {
+            if ((int) $proposal['id'] === $proposalId) {
+                return $proposal;
+            }
         }
     }
 
@@ -519,19 +654,16 @@ function findProposalById(int $proposalId): ?array
 
 function updateProposalStatus(int $proposalId, string $status, string $comment = ''): bool
 {
-    initializeMockProposals();
+    global $pdo;
 
-    foreach ($_SESSION['proposals'] as &$proposal) {
-        if ((int) $proposal['id'] === $proposalId) {
-            $proposal['status'] = $status;
-            $proposal['rejection_comment'] = $comment;
-            return true;
-        }
-    }
+    $directorUserId = (int) ($_SESSION['user_id'] ?? 0);
+    $directorName = (string) ($_SESSION['user_name'] ?? '');
 
-    unset($proposal);
-
-    return false;
+    return match (strtolower($status)) {
+        'approved' => approveProposal($pdo, $proposalId, $directorUserId, $directorName),
+        'rejected' => $comment !== '' && rejectProposal($pdo, $proposalId, $directorUserId, $comment, $directorName),
+        default    => false,
+    };
 }
 
 function getCampusProposalDraft(array $user): array
@@ -549,34 +681,13 @@ function saveCampusProposalDraft(array $user, array $formData): void
 
 function createCampusProposal(array $formData, array $user, string $status = 'pending'): int
 {
-    initializeMockProposals();
+    global $pdo;
 
-    $maxId = 1000;
-    foreach ($_SESSION['proposals'] as $proposal) {
-        $maxId = max($maxId, (int) $proposal['id']);
+    if (!in_array(strtolower($status), ['pending', 'submitted'], true)) {
+        throw new InvalidArgumentException('Campus proposals must be submitted with Submitted status.');
     }
 
-    $partnershipTypes = $formData['partnership_nature'] ?? $formData['partnership_types'] ?? [];
-    if (!is_array($partnershipTypes)) {
-        $partnershipTypes = [$partnershipTypes];
-    }
-
-    $newId = $maxId + 1;
-    // Session queue only — registry tables are updated exclusively via the Director entry form.
-    $_SESSION['proposals'][] = [
-        'id'                 => $newId,
-        'partner_name'       => trim((string) ($formData['partner_name'] ?? $formData['partner_legal_name'] ?? '')),
-        'partnership_type'   => implode(', ', array_map('strval', $partnershipTypes)),
-        'agreement_type'     => trim((string) ($formData['agreement_type'] ?? 'MOU')),
-        'campus'             => trim((string) ($formData['campus'] ?? $formData['submitter_campus'] ?? $user['campus'])),
-        'submitted_by'       => trim((string) ($formData['staff_name'] ?? $formData['submitter_name'] ?? $user['name'])),
-        'submitted_at'       => date('Y-m-d'),
-        'status'             => $status,
-        'rejection_comment'  => '',
-        'form_data'          => $formData,
-    ];
-
-    return $newId;
+    return submitCampusProposal($pdo, $formData, $user);
 }
 
 function renderSiteFooter(): void
@@ -603,6 +714,11 @@ function renderDashboardLogoutAction(?array $backLink = null): void
         </a>
     </div>
     <?php
+}
+
+function renderCampusAdminProfileBar(array $user): void
+{
+    require __DIR__ . '/views/campus-admin-profile-bar.php';
 }
 
 function renderDashboardHeader(array $user, string $title, string $subtitle = ''): void
@@ -697,14 +813,51 @@ function fetchDirectorMessageRecipients(PDO $pdo): array
     return $recipients;
 }
 
+function directorReviewPath(): string
+{
+    return routePath('dashboard/director/review');
+}
+
+function directorRegisterPath(): string
+{
+    return routePath('dashboard/director/register');
+}
+
+function directorCurrentSection(): string
+{
+    $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $uri = str_replace('\\', '/', (string) ($_SERVER['REQUEST_URI'] ?? ''));
+    $haystack = $script . ' ' . $uri;
+
+    if (
+        str_contains($haystack, 'director-review')
+        || str_contains($haystack, '/director/review')
+        || str_contains($haystack, 'dashboard_director_review')
+    ) {
+        return 'review';
+    }
+
+    if (
+        str_contains($haystack, 'director-register')
+        || str_contains($haystack, '/director/register')
+        || str_contains($haystack, 'dashboard_director_register')
+    ) {
+        return 'register';
+    }
+
+    return 'overview';
+}
+
 function buildDirectorNotifications(array $pendingProposals): array
 {
     $notifications = [];
+    $reviewPath = directorReviewPath();
 
     foreach ($pendingProposals as $proposal) {
         $notifications[] = [
             'title'  => 'New proposal: ' . $proposal['partner_name'],
             'detail' => $proposal['campus'] . ' · Submitted ' . $proposal['submitted_at'] . ' by ' . $proposal['submitted_by'],
+            'href'   => $reviewPath,
         ];
     }
 
@@ -793,7 +946,7 @@ function renderInstitutionalDashboardHeader(
         'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
         'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
         'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
-        assetUrl('css/app-shell.css'),
+        assetUrl('css/app-shell.css') . '?v=' . (string) (is_file(dirname(__DIR__) . '/css/app-shell.css') ? filemtime(dirname(__DIR__) . '/css/app-shell.css') : time()),
         assetUrl('css/director-header.css'),
         assetUrl('css/site-footer.css'),
     ], $options['extraStylesheets'] ?? []);
@@ -805,18 +958,35 @@ function renderDirectorDashboardHeader(
     array $user,
     string $pageTitle,
     array $pendingProposals = [],
-    int $notificationCount = 0
+    int $notificationCount = 0,
+    array $options = []
 ): void {
     if ($notificationCount <= 0) {
         $notificationCount = count($pendingProposals);
     }
 
+    $extraStylesheets = array_merge(
+        [assetUrl('css/director-dashboard.css')],
+        $options['extraStylesheets'] ?? []
+    );
+
     renderInstitutionalDashboardHeader($user, $pageTitle, [
         'notifications'            => buildDirectorNotifications($pendingProposals),
         'notificationCount'        => $notificationCount,
         'useMockNotificationCount' => false,
-        'pageSubtitle'             => 'Review campus proposals and register approved partnerships in the live registry.',
+        'pageSubtitle'             => $options['pageSubtitle'] ?? 'Review campus proposals and register signed partnerships in the live registry.',
+        'extraStylesheets'         => $extraStylesheets,
     ]);
+}
+
+function renderDirectorSubnav(string $activeNav, int $pendingCount = 0): void
+{
+    require __DIR__ . '/views/director-subnav.php';
+}
+
+function renderDirectorFlashMessages(): void
+{
+    require __DIR__ . '/views/director-flash.php';
 }
 
 function renderCampusAdminDashboardHeader(
@@ -827,13 +997,22 @@ function renderCampusAdminDashboardHeader(
 ): void {
     global $pdo;
 
+    $campusAdminCss = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'campus-admin-dashboard.css';
+    $campusAdminCssVersion = is_file($campusAdminCss) ? (string) filemtime($campusAdminCss) : (string) time();
+    $slideshowCss = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'campus-admin-slideshow.css';
+    $slideshowCssVersion = is_file($slideshowCss) ? (string) filemtime($slideshowCss) : (string) time();
+
     renderInstitutionalDashboardHeader($user, $pageTitle, [
         'notifications'         => buildCampusAdminNotifications($approvedProposals, $rejectedProposals),
         'messageRecipients'     => fetchCampusAdminMessageRecipients($pdo),
         'notificationsHeading'  => 'Proposal Status Updates',
         'messagePlaceholder'    => 'Type your message to the Partnership Director, President, or Executive Officer...',
         'pageSubtitle'          => 'Submit and review proposed partnership agreements.',
-        'extraStylesheets'      => [assetUrl('css/campus-admin-dashboard.css')],
+        'bodyClass'             => 'app-shell campus-admin-theme',
+        'extraStylesheets'      => [
+            assetUrl('css/campus-admin-dashboard.css') . '?v=' . $campusAdminCssVersion,
+            assetUrl('css/campus-admin-slideshow.css') . '?v=' . $slideshowCssVersion,
+        ],
     ]);
 }
 

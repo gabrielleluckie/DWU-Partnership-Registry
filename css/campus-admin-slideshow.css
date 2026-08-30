@@ -1,0 +1,206 @@
+/**
+ * Campus Admin full-width partnership photo slideshow.
+ */
+
+html:has(body.app-shell.campus-admin-theme) {
+    overflow-x: clip;
+}
+
+.campus-hero-slideshow {
+    --hero-green: #0a3d24;
+    --hero-green-deep: #062616;
+    --hero-green-mid: #0d4d2b;
+    --hero-gold: #e8b40a;
+    --hero-cream: #f4f0e6;
+
+    position: relative;
+    left: 50%;
+    width: 100vw;
+    max-width: 100vw;
+    margin: -0.5rem 0 1.25rem;
+    transform: translateX(-50%);
+    background: var(--hero-green-deep);
+    box-shadow: 0 8px 28px rgba(6, 38, 22, 0.18);
+}
+
+.campus-hero-slideshow:focus {
+    outline: none;
+}
+
+.campus-hero-slideshow:focus-visible {
+    outline: 2px solid var(--hero-gold);
+    outline-offset: -2px;
+}
+
+@media (min-width: 992px) {
+    .campus-hero-slideshow {
+        margin-top: -1rem;
+    }
+}
+
+.campus-hero-photos {
+    position: relative;
+    min-height: 22rem;
+    height: clamp(16rem, 38vw, 26rem);
+    overflow: hidden;
+}
+
+.campus-hero-slide {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.85s ease, visibility 0.85s ease;
+    z-index: 0;
+}
+
+.campus-hero-slide.is-active {
+    opacity: 1;
+    visibility: visible;
+    z-index: 1;
+}
+
+.campus-hero-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.campus-hero-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    height: 100%;
+    padding: 1.5rem;
+    text-align: center;
+    color: #fff;
+    background:
+        radial-gradient(circle at 50% 30%, rgba(232, 180, 10, 0.16), transparent 48%),
+        repeating-linear-gradient(
+            -18deg,
+            transparent 0 18px,
+            rgba(255, 255, 255, 0.03) 18px 19px
+        ),
+        linear-gradient(135deg, var(--hero-green-mid), var(--hero-green-deep));
+    border: 2px dashed rgba(232, 180, 10, 0.45);
+    border-left: 0;
+    border-right: 0;
+}
+
+.campus-hero-placeholder i {
+    font-size: 2.4rem;
+    color: var(--hero-gold);
+    margin-bottom: 0.35rem;
+}
+
+.campus-hero-placeholder-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.campus-hero-placeholder-hint {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.campus-hero-placeholder-hint code {
+    display: inline-block;
+    margin-top: 0.2rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 0.3rem;
+    background: rgba(0, 0, 0, 0.28);
+    color: var(--hero-gold);
+    font-size: 0.75rem;
+}
+
+.campus-hero-controls {
+    position: absolute;
+    left: 50%;
+    bottom: 0.9rem;
+    transform: translateX(-50%);
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(6, 38, 22, 0.55);
+    backdrop-filter: blur(6px);
+}
+
+.campus-hero-nav,
+.campus-hero-pause,
+.campus-hero-dot {
+    border: 0;
+    cursor: pointer;
+}
+
+.campus-hero-nav,
+.campus-hero-pause {
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(232, 180, 10, 0.55);
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.campus-hero-nav:hover,
+.campus-hero-pause:hover,
+.campus-hero-nav:focus-visible,
+.campus-hero-pause:focus-visible {
+    background: var(--hero-green-mid);
+    outline: none;
+    transform: scale(1.06);
+}
+
+.campus-hero-dots {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0 0.2rem;
+}
+
+.campus-hero-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    padding: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.45);
+    transition: background 0.2s ease, width 0.2s ease;
+}
+
+.campus-hero-dot.is-active {
+    width: 1.15rem;
+    background: var(--hero-gold);
+}
+
+@media (max-width: 575.98px) {
+    .campus-hero-photos {
+        min-height: 14rem;
+        height: 16rem;
+    }
+
+    .campus-hero-placeholder-hint code {
+        font-size: 0.68rem;
+        word-break: break-all;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .campus-hero-slide,
+    .campus-hero-dot {
+        transition: none;
+    }
+}

@@ -1,0 +1,126 @@
+/**
+ * Partnership Director pages — overview hub, review queue, register form.
+ */
+
+body.app-shell .director-shortcut-card {
+    display: block;
+    height: 100%;
+    text-decoration: none;
+    color: inherit;
+    background: var(--app-card);
+    border: 1px solid var(--app-border);
+    border-radius: 1rem;
+    padding: 1.5rem 1.75rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    transition: border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+body.app-shell .director-shortcut-card:hover,
+body.app-shell .director-shortcut-card:focus {
+    color: inherit;
+    border-color: rgba(2, 132, 199, 0.55);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+}
+
+body.app-shell .director-shortcut-card h2 {
+    color: var(--app-text);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 0.35rem;
+}
+
+body.app-shell .director-shortcut-card p {
+    color: var(--app-muted);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+body.app-shell .director-shortcut-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1.15rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #7dd3fc;
+}
+
+body.app-shell .director-review-page,
+body.app-shell .director-register-page {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+}
+
+body.app-shell .director-panel {
+    background: #ffffff;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+}
+
+body.app-shell .director-panel-header {
+    padding: 1.25rem 1.75rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+body.app-shell .director-panel-header h1,
+body.app-shell .director-panel-header h2 {
+    color: #0f172a;
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+body.app-shell .director-panel-header p {
+    color: #64748b;
+    font-size: 0.875rem;
+    margin: 0.3rem 0 0;
+}
+
+body.app-shell .director-proposal-item {
+    padding: 1.5rem 1.75rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+body.app-shell .director-proposal-item:last-child {
+    border-bottom: none;
+}
+
+body.app-shell .director-empty-state {
+    padding: 2.75rem 1.75rem;
+    text-align: center;
+}
+
+a.director-pending-banner {
+    color: inherit;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+a.director-pending-banner:hover,
+a.director-pending-banner:focus {
+    color: inherit;
+    border-color: #f59e0b;
+    background-color: #fffbeb;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+a.director-notification-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 0.4rem;
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+    margin-left: -0.4rem;
+    margin-right: -0.4rem;
+}
+
+a.director-notification-link:hover {
+    background: rgba(255, 255, 255, 0.06);
+}

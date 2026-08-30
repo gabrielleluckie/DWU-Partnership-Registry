@@ -14,6 +14,19 @@ final class Agreement
     public const STATUS_ACTIVE = 'Active';
     public const STATUS_EXPIRING_SOON = 'Expiring Soon';
     public const STATUS_EXPIRED = 'Expired';
+    public const STATUS_SUBMITTED = 'Submitted';
+    public const STATUS_APPROVED = 'Approved';
+    public const STATUS_REJECTED = 'Rejected';
+
+    /** @return list<string> */
+    public static function registryLifecycleStatuses(): array
+    {
+        return [
+            self::STATUS_ACTIVE,
+            self::STATUS_EXPIRING_SOON,
+            self::STATUS_EXPIRED,
+        ];
+    }
 
     public int $id;
     public string $partnerName;

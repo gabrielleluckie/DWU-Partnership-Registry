@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/guard.php';
 
+use App\Models\Agreement;
+
 $user = requireRole($pdo, [ROLE_CAMPUS_ADMIN]);
 
 $activeTab = $_GET['tab'] ?? 'submit';
-if (!in_array($activeTab, ['submit', 'review'], true)) {
+if (!in_array($activeTab, ['submit', 'review', 'agreements'], true)) {
     $activeTab = 'submit';
 }
-
-initializeMockProposals();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['form_action'] ?? '';
@@ -36,15 +36,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect(routePath('dashboard/campus-admin') . '?tab=submit');
         }
 
-        $proposalId = createCampusProposal($_POST, $user, 'pending');
-        setFlash('success', 'Proposal #' . $proposalId . ' has been submitted to the Partnership Director for review.');
-        redirect(routePath('dashboard/campus-admin') . '?tab=review');
+        try {
+            $proposalId = createCampusProposal($_POST, $user, 'pending');
+            setFlash('success', 'Proposal #' . $proposalId . ' has been submitted to the Partnership Director for review.');
+            redirect(routePath('dashboard/campus-admin') . '?tab=review');
+        } catch (Throwable $exception) {
+            setFlash('error', $exception->getMessage());
+            redirect(routePath('dashboard/campus-admin') . '?tab=submit');
+        }
     }
 }
 
 $draft = getCampusProposalDraft($user);
-$approvedProposals = getProposalsByStatus('approved');
-$rejectedProposals = getProposalsByStatus('rejected');
+$approvedProposals = getProposalsByStatus('approved', $user);
+$rejectedProposals = getProposalsByStatus('rejected', $user);
+
+$allowedAgreementStatuses = [
+    Agreement::STATUS_ACTIVE,
+    Agreement::STATUS_EXPIRING_SOON,
+    Agreement::STATUS_EXPIRED,
+    'ALL',
+];
+$filterStatus = (string) ($_GET['status'] ?? 'ALL');
+if (!in_array($filterStatus, $allowedAgreementStatuses, true)) {
+    $filterStatus = Agreement::STATUS_ACTIVE;
+}
+
+$viewAgreement = null;
+$registryAgreements = [];
+$campusId = (int) ($user['campus_id'] ?? 0);
+
+if ($activeTab === 'agreements') {
+    $viewId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+
+    if ($viewId > 0) {
+        $candidate = fetchRegistryAgreementById($pdo, $viewId);
+
+        if ($candidate === null || !userCanAccessRegistryAgreement($user, $candidate)) {
+            setFlash('error', 'That agreement was not found for your campus.');
+            redirect(routePath('dashboard/campus-admin') . '?tab=agreements&status=' . rawurlencode($filterStatus));
+        }
+
+        $viewAgreement = $candidate;
+    } elseif ($campusId > 0) {
+        $registryAgreements = fetchFilteredAgreements(
+            $pdo,
+            $filterStatus !== 'ALL' ? $filterStatus : null,
+            null,
+            $campusId
+        );
+    }
+}
 
 renderCampusAdminDashboardHeader(
     $user,
@@ -52,8 +94,6 @@ renderCampusAdminDashboardHeader(
     $approvedProposals,
     $rejectedProposals
 );
-
-renderDashboardLogoutAction();
 ?>
 
 <?php if ($message = flashMessage('success')): ?>
@@ -70,6 +110,10 @@ renderDashboardLogoutAction();
     </div>
 <?php endif; ?>
 
+<?php require __DIR__ . '/includes/views/campus-admin-hero-slideshow.php'; ?>
+
+<?php renderCampusAdminProfileBar($user); ?>
+
 <div class="app-subnav app-subnav-bleed">
     <div class="container-fluid px-3 px-lg-4">
         <ul class="nav nav-tabs campus-admin-tabs mb-0" role="tablist">
@@ -83,6 +127,12 @@ renderDashboardLogoutAction();
                 <a href="?tab=review"
                    class="nav-link fw-semibold <?= $activeTab === 'review' ? 'active' : '' ?>">
                     <i class="bi bi-list-check me-1"></i> Review Proposal Forms
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a href="?tab=agreements"
+                   class="nav-link fw-semibold <?= $activeTab === 'agreements' ? 'active' : '' ?>">
+                    <i class="bi bi-folder2-open me-1"></i> Active Agreements
                 </a>
             </li>
         </ul>
@@ -99,6 +149,11 @@ renderDashboardLogoutAction();
 <?php if ($activeTab === 'submit'): ?>
     <?php require __DIR__ . '/includes/campus-intake-form.php'; ?>
     <script src="<?= e(assetUrl('js/campus-intake-form.js')) ?>"></script>
+<?php elseif ($activeTab === 'agreements'): ?>
+    <?php
+    $agreements = $registryAgreements;
+    require __DIR__ . '/includes/views/campus-admin-agreements.php';
+    ?>
 <?php else: ?>
     <div class="review-grid">
         <section class="review-panel">
@@ -160,4 +215,9 @@ renderDashboardLogoutAction();
     </div>
 <?php endif; ?>
 
+<?php
+$slideshowJs = __DIR__ . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'campus-admin-slideshow.js';
+$slideshowJsVersion = is_file($slideshowJs) ? (string) filemtime($slideshowJs) : (string) time();
+?>
+<script src="<?= e(assetUrl('js/campus-admin-slideshow.js') . '?v=' . $slideshowJsVersion) ?>"></script>
 <?php renderDirectorDashboardFooter(); ?>

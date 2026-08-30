@@ -1,0 +1,97 @@
+/**
+ * Active Partnership Entry Form — light panel on dark app shell.
+ * Ensures inputs remain visible, focusable, and typable.
+ */
+
+body.app-shell .director-entry-form-panel {
+    position: relative;
+    z-index: 2;
+    color: #0f172a;
+    background: #ffffff;
+}
+
+body.app-shell .director-entry-form-shell {
+    color: #0f172a;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+@media (min-width: 992px) {
+    body.app-shell .director-entry-form-shell {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 1.25rem 1.5rem;
+    }
+
+    body.app-shell .director-entry-form-shell > .director-form-full,
+    body.app-shell .director-entry-form-shell > fieldset:nth-of-type(n + 3) {
+        grid-column: 1 / -1;
+    }
+}
+
+body.app-shell .director-entry-form-shell fieldset {
+    border-color: #e2e8f0;
+}
+
+body.app-shell .director-entry-form-shell legend,
+body.app-shell .director-entry-form-shell label {
+    color: #334155;
+}
+
+body.app-shell .director-entry-form-shell .form-control,
+body.app-shell .director-entry-form-shell .form-select,
+body.app-shell .director-entry-form-shell input:not([type="radio"]):not([type="checkbox"]),
+body.app-shell .director-entry-form-shell select,
+body.app-shell .director-entry-form-shell textarea {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1;
+    pointer-events: auto;
+    opacity: 1;
+    -webkit-text-fill-color: #0f172a;
+}
+
+body.app-shell .director-entry-form-shell .form-control::placeholder,
+body.app-shell .director-entry-form-shell textarea::placeholder {
+    color: #64748b;
+    opacity: 1;
+}
+
+body.app-shell .director-entry-form-shell .form-control:focus,
+body.app-shell .director-entry-form-shell .form-select:focus,
+body.app-shell .director-entry-form-shell input:not([type="radio"]):not([type="checkbox"]):focus,
+body.app-shell .director-entry-form-shell select:focus,
+body.app-shell .director-entry-form-shell textarea:focus {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #006633;
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 51, 0.15);
+    outline: none;
+}
+
+body.app-shell .director-entry-form-shell .form-control:disabled,
+body.app-shell .director-entry-form-shell .form-select:disabled,
+body.app-shell .director-entry-form-shell input:disabled,
+body.app-shell .director-entry-form-shell select:disabled,
+body.app-shell .director-entry-form-shell textarea:disabled {
+    background-color: #f1f5f9 !important;
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b;
+    cursor: not-allowed;
+    opacity: 1;
+}
+
+body.app-shell .director-entry-form-shell input:-webkit-autofill,
+body.app-shell .director-entry-form-shell input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #0f172a !important;
+    box-shadow: 0 0 0 1000px #ffffff inset !important;
+}
+
+body.app-shell .director-entry-form-shell input[type="file"] {
+    color: #0f172a;
+}
+
+body.app-shell .director-entry-form-shell input[type="file"]::file-selector-button {
+    color: #ffffff;
+}

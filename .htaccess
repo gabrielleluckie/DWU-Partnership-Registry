@@ -11,5 +11,9 @@ RewriteRule ^logout/?$ logout.php [L,QSA]
 
 # Role-based dashboard routes
 RewriteRule ^dashboard/campus-admin/?$ dashboard/campus-admin.php [L,QSA]
+RewriteRule ^dashboard/profile-photo/?$ dashboard/profile-photo.php [L,QSA]
+RewriteRule ^dashboard/agreement-document/?$ dashboard/agreement-document.php [L,QSA]
+RewriteRule ^dashboard/director/review/?$ dashboard/director-review.php [L,QSA]
+RewriteRule ^dashboard/director/register/?$ dashboard/director-register.php [L,QSA]
 RewriteRule ^dashboard/director/?$ dashboard/director.php [L,QSA]
 RewriteRule ^dashboard/registry/?$ dashboard/registry.php [L,QSA]

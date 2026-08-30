@@ -109,6 +109,18 @@ function resolveAgreementDisplayStatus(?string $expiryDate, ?string $dbStatus = 
     };
 }
 
+function registryAgreementStatusFilterSql(string $alias = ''): string
+{
+    $quoted = implode(', ', array_map(
+        static fn(string $status): string => "'" . str_replace("'", "''", $status) . "'",
+        Agreement::registryLifecycleStatuses()
+    ));
+
+    $column = $alias !== '' ? "`{$alias}`.Status" : 'Status';
+
+    return "{$column} IN ({$quoted})";
+}
+
 function enrichAgreementRow(array $row): array
 {
     $model = Agreement::fromRow($row);
@@ -197,6 +209,7 @@ function fetchAgreements(PDO $pdo): array
             INNER JOIN `{$partnerTable}` p ON a.Partner_ID = p.Partner_ID
             INNER JOIN `{$campusTable}` c ON COALESCE(a.Campus_ID, p.Campus_ID) = c.Campus_ID
             {$contactJoin}
+            WHERE " . registryAgreementStatusFilterSql('a') . "
             ORDER BY a.Agree_ID ASC";
 
     $rows = $pdo->query($sql)->fetchAll();
@@ -224,7 +237,8 @@ function fetchAgreementCounts(PDO $pdo): array
         return $counts;
     }
 
-    $stmt = $pdo->query("SELECT Expiry_Date, Status FROM `{$agreementTable}`");
+    $registryFilter = registryAgreementStatusFilterSql();
+    $stmt = $pdo->query("SELECT Expiry_Date, Status FROM `{$agreementTable}` WHERE {$registryFilter}");
 
     while ($row = $stmt->fetch()) {
         $counts['Total']++;
@@ -258,11 +272,13 @@ function fetchFilteredAgreements(PDO $pdo, ?string $status = null, ?string $type
                 c.Campus_ID,
                 a.Status AS status,
                 a.Expiry_Date AS expiry,
-                a.Signed_Date AS signed_date
+                a.Signed_Date AS signed_date,
+                a.Document_Path AS document_path,
+                a.Scope_Description AS scope
             FROM `{$agreementTable}` a
             INNER JOIN `{$partnerTable}` p ON a.Partner_ID = p.Partner_ID
             INNER JOIN `{$campusTable}` c ON COALESCE(a.Campus_ID, p.Campus_ID) = c.Campus_ID
-            WHERE 1 = 1";
+            WHERE " . registryAgreementStatusFilterSql('a');
     $params = [];
 
     if ($type !== null && $type !== '' && $type !== 'ALL') {
@@ -296,6 +312,157 @@ function fetchFilteredAgreements(PDO $pdo, ?string $status = null, ?string $type
     return $rows;
 }
 
+function agreementHasDocument(array $agreement): bool
+{
+    return agreementDocumentAbsolutePath((string) ($agreement['document_path'] ?? '')) !== null;
+}
+
+function agreementDocumentAbsolutePath(?string $relativePath): ?string
+{
+    $relativePath = str_replace('\\', '/', trim((string) $relativePath));
+
+    if ($relativePath === '' || str_contains($relativePath, '..')) {
+        return null;
+    }
+
+    if (!str_starts_with($relativePath, 'uploads/agreements/')) {
+        return null;
+    }
+
+    $absolute = dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+
+    return is_file($absolute) ? $absolute : null;
+}
+
+function agreementDownloadFilename(string $relativePath): string
+{
+    $base = basename($relativePath);
+    $stripped = preg_replace('/^\d+_/', '', $base);
+
+    return is_string($stripped) && $stripped !== '' ? $stripped : $base;
+}
+
+function agreementDownloadUrl(int $agreementId, bool $forceDownload = false): string
+{
+    $url = routePath('dashboard/agreement-document') . '?id=' . $agreementId;
+
+    if ($forceDownload) {
+        $url .= '&download=1';
+    }
+
+    return $url;
+}
+
+function agreementDocumentMimeType(string $path): string
+{
+    $extension = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+
+    return match ($extension) {
+        'pdf' => 'application/pdf',
+        'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'png' => 'image/png',
+        'jpg', 'jpeg' => 'image/jpeg',
+        default => 'application/octet-stream',
+    };
+}
+
+function userCanAccessRegistryAgreement(array $user, array $agreement): bool
+{
+    $role = (string) ($user['role'] ?? '');
+
+    if (roleMatchesAllowed($role, [ROLE_PARTNERSHIP_DIRECTOR, ROLE_PRESIDENT, ROLE_EXECUTIVE_OFFICER])) {
+        return true;
+    }
+
+    if (!roleMatchesAllowed($role, [ROLE_CAMPUS_ADMIN])) {
+        return false;
+    }
+
+    $userCampusId = (int) ($user['campus_id'] ?? 0);
+    $agreementCampusId = (int) ($agreement['Campus_ID'] ?? $agreement['campus_id'] ?? 0);
+
+    return $userCampusId > 0 && $userCampusId === $agreementCampusId;
+}
+
+function fetchRegistryAgreementById(PDO $pdo, int $agreementId): ?array
+{
+    $tables = registryTableNames($pdo);
+    $agreementTable = $tables['agreement'];
+    $partnerTable = $tables['partner'];
+    $contactTable = $tables['contact'];
+    $campusTable = $tables['campus'];
+
+    if ($agreementId <= 0 || $agreementTable === null || $partnerTable === null) {
+        return null;
+    }
+
+    $contactJoin = '';
+    $contactSelect = "'N/A' AS contact, NULL AS contact_designation, NULL AS contact_email, NULL AS contact_phone, NULL AS contact_fax";
+
+    if ($contactTable !== null) {
+        $contactJoin = "LEFT JOIN (
+                            SELECT Partner_ID, MIN(Contact_ID) AS Contact_ID
+                            FROM `{$contactTable}`
+                            GROUP BY Partner_ID
+                        ) first_contact ON p.Partner_ID = first_contact.Partner_ID
+                        LEFT JOIN `{$contactTable}` ct ON ct.Contact_ID = first_contact.Contact_ID";
+        $contactSelect = 'COALESCE(ct.Name, \'N/A\') AS contact,
+                          ct.Designation AS contact_designation,
+                          ct.Email AS contact_email,
+                          ct.Phone_Number AS contact_phone,
+                          ct.Fax AS contact_fax';
+    }
+
+    $userJoin = '';
+    $userSelect = 'NULL AS registered_by';
+    $tablesList = $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
+    $usersTable = in_array('users', $tablesList, true) ? 'users' : null;
+
+    if ($usersTable !== null) {
+        $meta = usersTableMeta($pdo);
+        $firstCol = $meta['first_name_col'];
+        $lastCol = $meta['last_name_col'];
+        $userJoin = "LEFT JOIN `{$usersTable}` submitter ON a.Submitted_By = submitter.User_ID";
+        $userSelect = "TRIM(CONCAT(COALESCE(submitter.`{$firstCol}`, ''), ' ', COALESCE(submitter.`{$lastCol}`, ''))) AS registered_by";
+    }
+
+    $sql = "SELECT
+                a.Agree_ID AS id,
+                p.Name AS partner,
+                p.Country AS partner_country,
+                p.Address AS partner_address,
+                p.Website AS partner_website,
+                a.Agreement_Type AS type,
+                a.Partnership_Type AS Partnership_type,
+                c.Name AS campus,
+                c.Province AS campus_province,
+                c.Campus_ID,
+                a.Status AS status,
+                a.Expiry_Date AS expiry,
+                a.Signed_Date AS signed_date,
+                a.Document_Path AS document_path,
+                a.Scope_Description AS scope,
+                a.Director_Comments AS director_comments,
+                a.created_at AS registered_at,
+                {$contactSelect},
+                {$userSelect}
+            FROM `{$agreementTable}` a
+            INNER JOIN `{$partnerTable}` p ON a.Partner_ID = p.Partner_ID
+            INNER JOIN `{$campusTable}` c ON COALESCE(a.Campus_ID, p.Campus_ID) = c.Campus_ID
+            {$contactJoin}
+            {$userJoin}
+            WHERE a.Agree_ID = :id
+              AND " . registryAgreementStatusFilterSql('a') . "
+            LIMIT 1";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['id' => $agreementId]);
+    $row = $stmt->fetch();
+
+    return $row ? enrichAgreementRow($row) : null;
+}
+
 function fetchAgreementHistory(PDO $pdo): array
 {
     $tables = registryTableNames($pdo);
@@ -321,6 +488,47 @@ function fetchAgreementHistory(PDO $pdo): array
             ORDER BY ah.Event_Date DESC, ah.AgreeHis_ID DESC";
 
     return $pdo->query($sql)->fetchAll();
+}
+
+function fetchAgreementHistoryForId(PDO $pdo, int $agreementId): array
+{
+    $tables = registryTableNames($pdo);
+    $historyTable = $tables['agreement_history'];
+
+    if ($agreementId <= 0 || $historyTable === null) {
+        return [];
+    }
+
+    $stmt = $pdo->prepare(
+        "SELECT AgreeHis_ID, Agree_ID, Event_Type, Event_Date, Comments
+         FROM `{$historyTable}`
+         WHERE Agree_ID = :id
+         ORDER BY Event_Date DESC, AgreeHis_ID DESC"
+    );
+    $stmt->execute(['id' => $agreementId]);
+
+    return $stmt->fetchAll();
+}
+
+function registryDashboardUrl(array $params = []): string
+{
+    $query = [];
+
+    if (isset($params['status']) && $params['status'] !== null && $params['status'] !== '') {
+        $query['status'] = (string) $params['status'];
+    }
+
+    if (isset($params['campus_id']) && (int) $params['campus_id'] > 0) {
+        $query['campus_id'] = (int) $params['campus_id'];
+    }
+
+    if (isset($params['agreement_id']) && (int) $params['agreement_id'] > 0) {
+        $query['agreement_id'] = (int) $params['agreement_id'];
+    }
+
+    $url = routePath('dashboard/registry');
+
+    return $query === [] ? $url : $url . '?' . http_build_query($query);
 }
 
 function fetchPartnersWithContacts(PDO $pdo): array
@@ -577,19 +785,39 @@ function registerActivePartnership(
                 $historyComment .= ' Scope/funding notes recorded.';
             }
 
-            $insertHistory = $pdo->prepare(
-                "INSERT INTO `{$historyTable}`
-                    (Agree_ID, Event_Type, Event_Date, Comments)
-                 VALUES
-                    (:agree_id, :event_type, :event_date, :comments)"
-            );
+            $historyColumns = $pdo->query("SHOW COLUMNS FROM `{$historyTable}`")->fetchAll(PDO::FETCH_COLUMN);
+            $historyHasLoggedBy = in_array('Logged_By', $historyColumns, true);
 
-            $insertHistory->execute([
-                'agree_id'    => $agreementId,
-                'event_type'  => 'Agreement Created',
-                'event_date'  => date('Y-m-d H:i:s'),
-                'comments'    => $historyComment,
-            ]);
+            if ($historyHasLoggedBy) {
+                $insertHistory = $pdo->prepare(
+                    "INSERT INTO `{$historyTable}`
+                        (Agree_ID, Logged_By, Event_Type, Event_Date, Comments)
+                     VALUES
+                        (:agree_id, :logged_by, :event_type, :event_date, :comments)"
+                );
+
+                $insertHistory->execute([
+                    'agree_id'    => $agreementId,
+                    'logged_by'   => $directorUserId,
+                    'event_type'  => 'Agreement Created',
+                    'event_date'  => date('Y-m-d H:i:s'),
+                    'comments'    => $historyComment,
+                ]);
+            } else {
+                $insertHistory = $pdo->prepare(
+                    "INSERT INTO `{$historyTable}`
+                        (Agree_ID, Event_Type, Event_Date, Comments)
+                     VALUES
+                        (:agree_id, :event_type, :event_date, :comments)"
+                );
+
+                $insertHistory->execute([
+                    'agree_id'    => $agreementId,
+                    'event_type'  => 'Agreement Created',
+                    'event_date'  => date('Y-m-d H:i:s'),
+                    'comments'    => $historyComment,
+                ]);
+            }
         }
 
         $pdo->commit();
@@ -713,4 +941,425 @@ function storeUploadedAgreementPdf(array $file): ?string
     }
 
     return 'uploads/agreements/' . $filename;
+}
+
+function proposalStatusFromSlug(string $slug): string
+{
+    return match (strtolower($slug)) {
+        'pending', 'submitted' => Agreement::STATUS_SUBMITTED,
+        'approved'             => Agreement::STATUS_APPROVED,
+        'rejected'             => Agreement::STATUS_REJECTED,
+        default                => $slug,
+    };
+}
+
+function buildProposalScopeDescription(array $formData): string
+{
+    $parts = [];
+
+    $description = trim((string) ($formData['partnership_description'] ?? ''));
+    if ($description !== '') {
+        $parts[] = "Objectives/Rationale:\n" . $description;
+    }
+
+    $dwuCommitments = trim((string) ($formData['dwu_commitments'] ?? ''));
+    if ($dwuCommitments !== '') {
+        $parts[] = "DWU Commitments:\n" . $dwuCommitments;
+    }
+
+    $partnerContributions = trim((string) ($formData['partner_contributions'] ?? ''));
+    if ($partnerContributions !== '') {
+        $parts[] = "Partner Contributions:\n" . $partnerContributions;
+    }
+
+    return implode("\n\n", $parts);
+}
+
+function parseCountryFromLocation(string $location): string
+{
+    $location = trim($location);
+    if ($location === '') {
+        return 'Unknown';
+    }
+
+    $parts = preg_split('/[,;]/', $location, 2);
+
+    return trim((string) ($parts[0] ?? '')) ?: 'Unknown';
+}
+
+function resolveCampusIdForProposal(PDO $pdo, array $formData, array $user): int
+{
+    if (!empty($user['campus_id'])) {
+        return (int) $user['campus_id'];
+    }
+
+    $campusName = trim((string) ($formData['campus'] ?? $formData['submitter_campus'] ?? ''));
+    if ($campusName === '') {
+        throw new InvalidArgumentException('Campus selection is required.');
+    }
+
+    $campusTable = campusTableName($pdo);
+    $stmt = $pdo->prepare("SELECT Campus_ID FROM `{$campusTable}` WHERE Name = :name LIMIT 1");
+    $stmt->execute(['name' => $campusName]);
+    $row = $stmt->fetch();
+
+    if ($row === false) {
+        throw new InvalidArgumentException('Selected campus was not found.');
+    }
+
+    return (int) $row['Campus_ID'];
+}
+
+function resolveOrCreateProposalPartner(PDO $pdo, array $formData, int $campusId): int
+{
+    $partnerName = trim((string) ($formData['partner_name'] ?? $formData['partner_legal_name'] ?? ''));
+    if ($partnerName === '') {
+        throw new InvalidArgumentException('Partner name is required.');
+    }
+
+    $partnerTable = partnerTableName($pdo);
+    if ($partnerTable === null) {
+        throw new RuntimeException('Partner registry table is not available.');
+    }
+
+    $sql = "SELECT Partner_ID FROM `{$partnerTable}` WHERE Name = :name AND Campus_ID = :campus_id";
+    if (partnerHasSoftDelete($pdo)) {
+        $sql .= ' AND Is_Deleted = 0';
+    }
+    $sql .= ' LIMIT 1';
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        'name'      => $partnerName,
+        'campus_id' => $campusId,
+    ]);
+    $existing = $stmt->fetch();
+
+    if ($existing !== false) {
+        return (int) $existing['Partner_ID'];
+    }
+
+    $location = trim((string) ($formData['partner_location'] ?? ''));
+    $country = parseCountryFromLocation($location);
+    $website = trim((string) ($formData['partner_website'] ?? ''));
+
+    return createPartnerRecord($pdo, $campusId, $partnerName, $country, $location, $website);
+}
+
+function submitCampusProposal(PDO $pdo, array $formData, array $user): int
+{
+    $userId = (int) ($user['id'] ?? 0);
+    if ($userId <= 0) {
+        throw new InvalidArgumentException('A valid campus admin session is required.');
+    }
+
+    $campusId = resolveCampusIdForProposal($pdo, $formData, $user);
+    $partnerId = resolveOrCreateProposalPartner($pdo, $formData, $campusId);
+
+    $partnershipTypes = $formData['partnership_nature'] ?? $formData['partnership_types'] ?? [];
+    if (!is_array($partnershipTypes)) {
+        $partnershipTypes = [$partnershipTypes];
+    }
+
+    $partnershipType = implode(', ', array_filter(array_map('strval', $partnershipTypes)));
+    $agreementType = trim((string) ($formData['agreement_type'] ?? 'MOU'));
+    $scopeDescription = buildProposalScopeDescription($formData);
+
+    $agreementTable = agreementTableName($pdo);
+    if ($agreementTable === null) {
+        throw new RuntimeException('Agreement table is not available.');
+    }
+
+    $pdo->beginTransaction();
+
+    try {
+        $insert = $pdo->prepare(
+            "INSERT INTO `{$agreementTable}`
+                (Partner_ID, Campus_ID, Submitted_By, Partnership_Type, Agreement_Type,
+                 Scope_Description, Status)
+             VALUES
+                (:partner_id, :campus_id, :submitted_by, :partnership_type, :agreement_type,
+                 :scope_description, :status)"
+        );
+
+        $insert->execute([
+            'partner_id'         => $partnerId,
+            'campus_id'          => $campusId,
+            'submitted_by'       => $userId,
+            'partnership_type'   => $partnershipType !== '' ? $partnershipType : null,
+            'agreement_type'     => $agreementType,
+            'scope_description'  => $scopeDescription !== '' ? $scopeDescription : null,
+            'status'             => Agreement::STATUS_SUBMITTED,
+        ]);
+
+        $agreeId = (int) $pdo->lastInsertId();
+        $submitterLabel = trim((string) ($formData['staff_name'] ?? $user['name'] ?? 'Campus Admin'));
+
+        logAgreementHistory(
+            $pdo,
+            $agreeId,
+            'Proposal Submitted',
+            sprintf('Partnership proposal submitted by %s for director review.', $submitterLabel),
+            $userId
+        );
+
+        $pdo->commit();
+
+        return $agreeId;
+    } catch (Throwable $exception) {
+        $pdo->rollBack();
+        throw $exception;
+    }
+}
+
+/** @return array<string, mixed> */
+function formatProposalRow(array $row): array
+{
+    $submittedAt = $row['created_at'] ?? $row['updated_at'] ?? null;
+    if ($submittedAt !== null && $submittedAt !== '') {
+        $submittedAt = date('Y-m-d', strtotime((string) $submittedAt));
+    } else {
+        $submittedAt = date('Y-m-d');
+    }
+
+    $reviewedAt = $row['reviewed_at'] ?? $row['updated_at'] ?? null;
+    if ($reviewedAt !== null && $reviewedAt !== '') {
+        $reviewedAt = date('Y-m-d', strtotime((string) $reviewedAt));
+    } else {
+        $reviewedAt = $submittedAt;
+    }
+
+    return [
+        'id'                  => (int) ($row['Agree_ID'] ?? $row['id'] ?? 0),
+        'partner_name'        => (string) ($row['partner_name'] ?? ''),
+        'partnership_type'    => (string) ($row['Partnership_Type'] ?? $row['partnership_type'] ?? ''),
+        'agreement_type'      => (string) ($row['Agreement_Type'] ?? $row['agreement_type'] ?? ''),
+        'campus'              => (string) ($row['campus_name'] ?? $row['campus'] ?? ''),
+        'submitted_by'        => (string) ($row['submitter_name'] ?? $row['submitted_by'] ?? ''),
+        'submitted_at'        => $submittedAt,
+        'reviewed_at'         => $reviewedAt,
+        'status'              => strtolower((string) ($row['Status'] ?? $row['status'] ?? '')),
+        'rejection_comment'   => (string) ($row['Director_Comments'] ?? $row['rejection_comment'] ?? ''),
+        'scope_description'   => (string) ($row['Scope_Description'] ?? $row['scope_description'] ?? ''),
+    ];
+}
+
+/**
+ * @return list<array<string, mixed>>
+ */
+function fetchAgreementsByStatus(
+    PDO $pdo,
+    string $status,
+    ?int $campusId = null,
+    ?int $submittedBy = null
+): array {
+    $agreementTable = agreementTableName($pdo);
+    $partnerTable = partnerTableName($pdo);
+    $campusTable = campusTableName($pdo);
+
+    if ($agreementTable === null || $partnerTable === null) {
+        return [];
+    }
+
+    $meta = usersTableMeta($pdo);
+    $first = $meta['first_name_col'];
+    $last = $meta['last_name_col'];
+
+    $sql = "SELECT
+                a.Agree_ID,
+                a.Partnership_Type,
+                a.Agreement_Type,
+                a.Scope_Description,
+                a.Status,
+                a.Director_Comments,
+                a.Submitted_By,
+                a.created_at,
+                a.updated_at,
+                p.Name AS partner_name,
+                c.Name AS campus_name,
+                CONCAT(u.`{$first}`, ' ', u.`{$last}`) AS submitter_name
+            FROM `{$agreementTable}` a
+            INNER JOIN `{$partnerTable}` p ON a.Partner_ID = p.Partner_ID
+            INNER JOIN `{$campusTable}` c ON a.Campus_ID = c.Campus_ID
+            LEFT JOIN users u ON a.Submitted_By = u.User_ID
+            WHERE a.Status = :status";
+
+    $params = ['status' => $status];
+
+    if ($campusId !== null && $campusId > 0) {
+        $sql .= ' AND a.Campus_ID = :campus_id';
+        $params['campus_id'] = $campusId;
+    }
+
+    if ($submittedBy !== null && $submittedBy > 0) {
+        $sql .= ' AND a.Submitted_By = :submitted_by';
+        $params['submitted_by'] = $submittedBy;
+    }
+
+    $sql .= ' ORDER BY a.Agree_ID DESC';
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+
+    $proposals = [];
+    while ($row = $stmt->fetch()) {
+        $proposals[] = formatProposalRow($row);
+    }
+
+    return $proposals;
+}
+
+/** @return list<array<string, mixed>> */
+function fetchSubmittedProposals(PDO $pdo): array
+{
+    return fetchAgreementsByStatus($pdo, Agreement::STATUS_SUBMITTED);
+}
+
+/** @return list<array<string, mixed>> */
+function fetchApprovedProposals(PDO $pdo): array
+{
+    return fetchAgreementsByStatus($pdo, Agreement::STATUS_APPROVED);
+}
+
+function logAgreementHistory(PDO $pdo, int $agreeId, string $eventType, string $comments, int $loggedBy): void
+{
+    $historyTable = registryTableNames($pdo)['agreement_history'];
+    if ($historyTable === null || $agreeId <= 0 || $loggedBy <= 0) {
+        return;
+    }
+
+    $columns = $pdo->query("SHOW COLUMNS FROM `{$historyTable}`")->fetchAll(PDO::FETCH_COLUMN);
+    $hasLoggedBy = in_array('Logged_By', $columns, true);
+
+    if ($hasLoggedBy) {
+        $stmt = $pdo->prepare(
+            "INSERT INTO `{$historyTable}` (Agree_ID, Logged_By, Event_Type, Event_Date, Comments)
+             VALUES (:agree_id, :logged_by, :event_type, :event_date, :comments)"
+        );
+
+        $stmt->execute([
+            'agree_id'    => $agreeId,
+            'logged_by'   => $loggedBy,
+            'event_type'  => $eventType,
+            'event_date'  => date('Y-m-d H:i:s'),
+            'comments'    => $comments,
+        ]);
+
+        return;
+    }
+
+    $stmt = $pdo->prepare(
+        "INSERT INTO `{$historyTable}` (Agree_ID, Event_Type, Event_Date, Comments)
+         VALUES (:agree_id, :event_type, :event_date, :comments)"
+    );
+
+    $stmt->execute([
+        'agree_id'    => $agreeId,
+        'event_type'  => $eventType,
+        'event_date'  => date('Y-m-d H:i:s'),
+        'comments'    => $comments,
+    ]);
+}
+
+function approveProposal(PDO $pdo, int $agreeId, int $directorUserId, string $directorName = ''): bool
+{
+    $agreementTable = agreementTableName($pdo);
+    if ($agreementTable === null || $agreeId <= 0 || $directorUserId <= 0) {
+        return false;
+    }
+
+    $check = $pdo->prepare(
+        "SELECT Agree_ID FROM `{$agreementTable}` WHERE Agree_ID = :id AND Status = :status LIMIT 1"
+    );
+    $check->execute([
+        'id'     => $agreeId,
+        'status' => Agreement::STATUS_SUBMITTED,
+    ]);
+
+    if ($check->fetch() === false) {
+        return false;
+    }
+
+    $pdo->beginTransaction();
+
+    try {
+        $update = $pdo->prepare(
+            "UPDATE `{$agreementTable}`
+             SET Status = :status, Reviewed_By = :reviewed_by, updated_at = NOW()
+             WHERE Agree_ID = :id AND Status = :current_status"
+        );
+
+        $update->execute([
+            'status'          => Agreement::STATUS_APPROVED,
+            'reviewed_by'     => $directorUserId,
+            'id'              => $agreeId,
+            'current_status'  => Agreement::STATUS_SUBMITTED,
+        ]);
+
+        $comment = 'Proposal approved for offline negotiation.';
+        if ($directorName !== '') {
+            $comment .= ' Approved by ' . $directorName . '.';
+        }
+
+        logAgreementHistory($pdo, $agreeId, 'Proposal Approved', $comment, $directorUserId);
+        $pdo->commit();
+
+        return true;
+    } catch (Throwable $exception) {
+        $pdo->rollBack();
+        throw $exception;
+    }
+}
+
+function rejectProposal(PDO $pdo, int $agreeId, int $directorUserId, string $reason, string $directorName = ''): bool
+{
+    $agreementTable = agreementTableName($pdo);
+    $reason = trim($reason);
+
+    if ($agreementTable === null || $agreeId <= 0 || $directorUserId <= 0 || $reason === '') {
+        return false;
+    }
+
+    $check = $pdo->prepare(
+        "SELECT Agree_ID FROM `{$agreementTable}` WHERE Agree_ID = :id AND Status = :status LIMIT 1"
+    );
+    $check->execute([
+        'id'     => $agreeId,
+        'status' => Agreement::STATUS_SUBMITTED,
+    ]);
+
+    if ($check->fetch() === false) {
+        return false;
+    }
+
+    $pdo->beginTransaction();
+
+    try {
+        $update = $pdo->prepare(
+            "UPDATE `{$agreementTable}`
+             SET Status = :status, Reviewed_By = :reviewed_by, Director_Comments = :comments, updated_at = NOW()
+             WHERE Agree_ID = :id AND Status = :current_status"
+        );
+
+        $update->execute([
+            'status'          => Agreement::STATUS_REJECTED,
+            'reviewed_by'     => $directorUserId,
+            'comments'        => $reason,
+            'id'              => $agreeId,
+            'current_status'  => Agreement::STATUS_SUBMITTED,
+        ]);
+
+        $historyComment = 'Proposal rejected: ' . $reason;
+        if ($directorName !== '') {
+            $historyComment .= ' (Reviewed by ' . $directorName . ')';
+        }
+
+        logAgreementHistory($pdo, $agreeId, 'Proposal Rejected', $historyComment, $directorUserId);
+        $pdo->commit();
+
+        return true;
+    } catch (Throwable $exception) {
+        $pdo->rollBack();
+        throw $exception;
+    }
 }

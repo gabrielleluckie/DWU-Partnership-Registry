@@ -148,6 +148,10 @@
     background: #006633;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
+    border: 2px solid rgba(248, 165, 29, 0.75);
+    background: #006633;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
 
 .app-user-trigger:hover .app-user-avatar {
     border-color: #f8a51d;
@@ -187,6 +191,11 @@
     border-bottom-color: #0284c7 !important;
 }
 
+body.app-shell main.campus-admin-main {
+    width: 100%;
+    margin-inline: auto;
+}
+
 /* Full-bleed subnav when placed inside main container */
 .app-subnav-bleed {
     margin-left: calc(-1 * var(--bs-gutter-x, 0.75rem));
@@ -217,6 +226,20 @@
     color: #f8a51d;
     margin-top: 0.15rem;
     filter: drop-shadow(0 0 6px rgba(248, 165, 29, 0.4));
+}
+
+a.app-notification-bar-link {
+    color: inherit;
+    min-width: 0;
+    border-radius: 0.35rem;
+    margin: -0.15rem 0;
+    padding: 0.15rem 0.25rem;
+}
+
+a.app-notification-bar-link:hover,
+a.app-notification-bar-link:focus {
+    color: inherit;
+    background: rgba(255, 255, 255, 0.06);
 }
 
 /* Dropdown panels (preserved JS behaviour) */
@@ -279,6 +302,16 @@
     border-bottom: none;
 }
 
+a.director-notification-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+a.director-notification-link:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
 .director-notification-item strong {
     display: block;
     color: #fff;
@@ -327,6 +360,7 @@
 .director-user-dropdown-header .director-user-avatar {
     width: 48px;
     height: 48px;
+    object-fit: cover;
 }
 
 .director-user-dropdown-header h3 {

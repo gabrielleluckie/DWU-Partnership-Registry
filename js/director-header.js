@@ -56,6 +56,28 @@ document.querySelectorAll('.director-dropdown-panel').forEach(function (panel) {
     });
 });
 
+document.querySelectorAll('[data-profile-photo-trigger]').forEach(function (button) {
+    button.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const inputId = button.getAttribute('data-profile-photo-trigger');
+        const input = inputId ? document.getElementById(inputId) : null;
+
+        if (input) {
+            input.click();
+        }
+    });
+});
+
+document.querySelectorAll('[data-profile-photo-input]').forEach(function (input) {
+    input.addEventListener('change', function () {
+        if (input.files && input.files.length > 0 && input.form) {
+            input.form.submit();
+        }
+    });
+});
+
 function submitDirectorMessage(event) {
     event.preventDefault();
 

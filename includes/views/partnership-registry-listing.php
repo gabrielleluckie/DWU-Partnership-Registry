@@ -12,6 +12,8 @@
 use App\Models\Agreement;
 
 $highlightAgreementId = isset($highlightAgreementId) ? (int) $highlightAgreementId : 0;
+$listStatus = $filterStatus ?? 'ALL';
+$listCampus = (int) ($filterCampus ?? 0);
 ?>
 <form method="get" action="<?= e(routePath('dashboard/registry')) ?>" class="app-card mb-4">
     <div class="app-card-body">
@@ -52,20 +54,22 @@ $highlightAgreementId = isset($highlightAgreementId) ? (int) $highlightAgreement
     </div>
 
     <div class="table-responsive">
-        <table class="table table-dark table-hover table-borderless mb-0 align-middle">
-            <thead class="border-bottom border-secondary">
+        <table class="table table-hover table-borderless mb-0 align-middle registry-listing-table">
+            <thead>
                 <tr>
                     <th class="small text-secondary">Partner Name</th>
                     <th class="small text-secondary">Campus</th>
                     <th class="small text-secondary">Agreement Type</th>
                     <th class="small text-secondary">Lifespan</th>
                     <th class="small text-secondary">Status</th>
+                    <th class="small text-secondary">Document</th>
+                    <th class="small text-secondary"></th>
                 </tr>
             </thead>
             <tbody>
                 <?php if ($agreements === []): ?>
                     <tr>
-                        <td colspan="5" class="text-center text-secondary py-5">
+                        <td colspan="7" class="text-center text-secondary py-5">
                             No partnership records found for the selected filters.
                         </td>
                     </tr>
@@ -80,16 +84,30 @@ $highlightAgreementId = isset($highlightAgreementId) ? (int) $highlightAgreement
                         $expiryLabel = !empty($agreement['expiry'])
                             ? date('M j, Y', strtotime($agreement['expiry']))
                             : '—';
+                        $detailUrl = registryDashboardUrl([
+                            'status'       => $listStatus,
+                            'campus_id'    => $listCampus,
+                            'agreement_id' => $rowId,
+                        ]);
                         ?>
-                        <tr id="agreement-<?= $rowId ?>" class="<?= $isHighlighted ? 'table-warning' : '' ?>">
-                            <td class="fw-medium"><?= e($agreement['partner']) ?></td>
+                        <tr id="agreement-<?= $rowId ?>"
+                            class="registry-agreement-row<?= $isHighlighted ? ' table-warning' : '' ?>"
+                            data-href="<?= e($detailUrl) ?>"
+                            tabindex="0"
+                            role="link"
+                            aria-label="View details for <?= e((string) ($agreement['partner'] ?? 'agreement')) ?>">
+                            <td class="fw-medium">
+                                <a href="<?= e($detailUrl) ?>" class="registry-agreement-name">
+                                    <?= e($agreement['partner']) ?>
+                                </a>
+                            </td>
                             <td class="text-secondary"><?= e($agreement['campus']) ?></td>
                             <td class="text-secondary"><?= e($agreement['type']) ?></td>
                             <td>
                                 <div class="agreement-lifespan small">
                                     <span class="lifespan-node"><?= e($signedLabel) ?></span>
                                     <span class="lifespan-arrow" aria-hidden="true">→</span>
-                                    <span class="lifespan-duration badge bg-dark border border-secondary"><?= e($agreement['duration'] ?? '—') ?></span>
+                                    <span class="lifespan-duration badge bg-light text-dark border"><?= e($agreement['duration'] ?? '—') ?></span>
                                     <span class="lifespan-arrow" aria-hidden="true">→</span>
                                     <span class="lifespan-node text-warning-emphasis"><?= e($expiryLabel) ?></span>
                                 </div>
@@ -98,6 +116,23 @@ $highlightAgreementId = isset($highlightAgreementId) ? (int) $highlightAgreement
                                 <span class="badge rounded-pill <?= statusBadgeClasses($agreement['status']) ?>">
                                     <?= e($agreement['status']) ?>
                                 </span>
+                            </td>
+                            <td>
+                                <?php if (agreementHasDocument($agreement)): ?>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <a class="btn btn-sm btn-outline-dark"
+                                           href="<?= e(agreementDownloadUrl($rowId)) ?>"
+                                           target="_blank"
+                                           rel="noopener">View</a>
+                                        <a class="btn btn-sm btn-success"
+                                           href="<?= e(agreementDownloadUrl($rowId, true)) ?>">Download</a>
+                                    </div>
+                                <?php else: ?>
+                                    <span class="small text-secondary">None</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-dark" href="<?= e($detailUrl) ?>">Details</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -122,10 +157,36 @@ $highlightAgreementId = isset($highlightAgreementId) ? (int) $highlightAgreement
 .agreement-lifespan .lifespan-duration {
     font-weight: 600;
 }
+.registry-agreement-row {
+    cursor: pointer;
+}
+.registry-agreement-name {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 600;
+}
+.registry-agreement-name:hover {
+    text-decoration: underline;
+}
 </style>
 
-<?php if ($highlightAgreementId > 0): ?>
 <script>
-document.getElementById('agreement-<?= (int) $highlightAgreementId ?>')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+document.querySelectorAll('tr.registry-agreement-row[data-href]').forEach(function (row) {
+    row.addEventListener('click', function (event) {
+        if (event.target.closest('a, button, input, label, select')) {
+            return;
+        }
+        window.location.href = row.getAttribute('data-href');
+    });
+    row.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+        }
+        if (event.target.closest('a, button, input, label, select')) {
+            return;
+        }
+        event.preventDefault();
+        window.location.href = row.getAttribute('data-href');
+    });
+});
 </script>
-<?php endif; ?>
