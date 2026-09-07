@@ -1,0 +1,226 @@
+/**
+ * Print layout for Partnership Registry listings.
+ */
+
+.registry-print-letterhead,
+.registry-print-contact {
+    display: none;
+}
+
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 0;
+
+        @top-left { content: none; }
+        @top-center { content: none; }
+        @top-right { content: none; }
+        @bottom-left { content: none; }
+        @bottom-center { content: none; }
+        @bottom-right { content: none; }
+    }
+
+    html,
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .app-global-header,
+    .app-notification-bar,
+    .app-subnav,
+    .app-dashboard-action-bar,
+    .site-footer,
+    .registry-print-hide {
+        display: none !important;
+    }
+
+    .registry-print-area {
+        display: block !important;
+        background: #ffffff !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 14mm 16mm 16mm !important;
+    }
+
+    .registry-print-area .table-responsive {
+        overflow: visible !important;
+    }
+
+    .registry-print-letterhead {
+        display: block !important;
+        margin: 0 0 1.1rem;
+        padding: 0 0 0.85rem;
+        border-bottom: 2.5px solid #006633;
+        box-shadow: 0 2px 0 #FFCC00;
+        color: #000000 !important;
+    }
+
+    .registry-print-letterhead-top {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .registry-print-logo {
+        width: 62px;
+        height: 62px;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    .registry-print-university {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: #006633 !important;
+    }
+
+    .registry-print-division {
+        margin: 0.1rem 0 0;
+        font-size: 0.92rem;
+        font-weight: 600;
+    }
+
+    .registry-print-doc-title {
+        margin: 0.15rem 0 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .registry-print-letterhead-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.75rem 1rem;
+        font-size: 0.72rem;
+        line-height: 1.4;
+    }
+
+    .registry-print-letterhead-meta p {
+        margin: 0;
+    }
+
+    .registry-print-label {
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #006633 !important;
+        margin-bottom: 0.15rem !important;
+    }
+
+    .registry-print-strong {
+        font-weight: 700;
+        font-size: 0.8rem;
+    }
+
+    .registry-listing-table {
+        width: 100%;
+        border-collapse: collapse;
+        color: #000000 !important;
+    }
+
+    .registry-listing-table thead {
+        display: table-header-group;
+    }
+
+    .registry-listing-table tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .registry-listing-table th,
+    .registry-listing-table td {
+        color: #000000 !important;
+        background: #ffffff !important;
+        border-bottom: 1px solid #d1d5db !important;
+        padding: 0.45rem 0.4rem !important;
+        font-size: 0.78rem;
+    }
+
+    .registry-listing-table th {
+        font-weight: 700;
+        text-transform: uppercase;
+        border-bottom: 1.5px solid #006633 !important;
+    }
+
+    .registry-col-document,
+    .registry-col-actions {
+        display: none !important;
+    }
+
+    .registry-status-badge,
+    .registry-status-badge.badge,
+    .registry-status-badge.bg-success,
+    .registry-status-badge.bg-danger,
+    .registry-status-badge.bg-warning,
+    .registry-status-badge.bg-secondary {
+        display: inline;
+        background: none !important;
+        background-color: transparent !important;
+        color: #000000 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        font-size: inherit !important;
+        font-weight: 600 !important;
+        box-shadow: none !important;
+    }
+
+    .agreement-lifespan {
+        display: flex;
+        flex-direction: column;
+        gap: 0.12rem;
+        color: #000000 !important;
+    }
+
+    .agreement-lifespan .lifespan-range {
+        color: #000000 !important;
+        font-weight: 600;
+        font-size: 0.78rem;
+    }
+
+    .agreement-lifespan .lifespan-duration {
+        color: #000000 !important;
+        background: none !important;
+        border: none !important;
+        padding: 0 !important;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+
+    .registry-agreement-name {
+        color: #000000 !important;
+        text-decoration: none !important;
+        font-weight: 600;
+    }
+
+    a {
+        color: #000000 !important;
+        text-decoration: none !important;
+    }
+
+    .registry-print-contact {
+        display: block !important;
+        margin-top: 1.25rem;
+        padding-top: 0.7rem;
+        border-top: 1.5px solid #006633;
+        font-size: 0.72rem;
+        line-height: 1.45;
+        color: #000000 !important;
+    }
+
+    .registry-print-contact p {
+        margin: 0;
+    }
+}

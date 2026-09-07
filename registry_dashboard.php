@@ -36,6 +36,7 @@ if ($highlightAgreementId > 0) {
     $agreementHistory = fetchAgreementHistoryForId($pdo, $highlightAgreementId);
 }
 
+$registryDirector = fetchPartnershipDirector($pdo);
 $counts = fetchAgreementCounts($pdo);
 $campuses = fetchCampuses($pdo);
 $agreements = $viewAgreement === null ? fetchFilteredAgreements(
@@ -49,11 +50,16 @@ renderInstitutionalDashboardHeader($user, 'Partnership Registry Dashboard', [
     'notifications'        => [],
     'notificationCount'    => 0,
     'pageSubtitle'         => 'Automated agreement status overview and registry listings.',
-    'bodyClass'            => 'app-shell campus-admin-theme',
+    'bodyClass'            => 'app-shell campus-admin-theme app-header-light',
     'extraStylesheets'     => [
         assetUrl('css/campus-admin-dashboard.css') . '?v=' . (string) (
             is_file(__DIR__ . '/css/campus-admin-dashboard.css')
                 ? filemtime(__DIR__ . '/css/campus-admin-dashboard.css')
+                : time()
+        ),
+        assetUrl('css/registry-print.css') . '?v=' . (string) (
+            is_file(__DIR__ . '/css/registry-print.css')
+                ? filemtime(__DIR__ . '/css/registry-print.css')
                 : time()
         ),
     ],
@@ -65,7 +71,7 @@ renderDashboardLogoutAction(registryHeaderBackLink($user));
 <?php renderDirectorFlashMessages(); ?>
 
 <?php if ($viewAgreement === null): ?>
-<div class="app-page-heading mb-4">
+<div class="app-page-heading mb-4 registry-print-hide">
     <h1 class="h3 mb-1">Partnership Registry Dashboard</h1>
     <p class="text-secondary mb-0">Shared executive view — open an agreement to see its full details.</p>
 </div>
@@ -74,7 +80,9 @@ renderDashboardLogoutAction(registryHeaderBackLink($user));
 <?php if ($viewAgreement !== null): ?>
     <?php require __DIR__ . '/includes/views/partnership-registry-detail.php'; ?>
 <?php else: ?>
-    <?php renderMetricCards($counts); ?>
+    <div class="registry-print-hide">
+        <?php renderMetricCards($counts); ?>
+    </div>
     <?php require __DIR__ . '/includes/views/partnership-registry-listing.php'; ?>
 <?php endif; ?>
 
