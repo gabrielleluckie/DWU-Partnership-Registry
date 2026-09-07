@@ -15,11 +15,36 @@ if (!in_array($activeTab, ['submit', 'review', 'agreements'], true)) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['form_action'] ?? '';
+    $returnTab = (string) ($_POST['return_tab'] ?? $activeTab);
+    if (!in_array($returnTab, ['submit', 'review', 'agreements'], true)) {
+        $returnTab = 'submit';
+    }
 
     if ($action === 'save_draft') {
-        saveCampusProposalDraft($user, $_POST);
-        setFlash('success', 'Draft saved successfully. You can continue editing at any time.');
-        redirect(routePath('dashboard/campus-admin') . '?tab=submit');
+        try {
+            lockCampusAdminFormCampus($_POST, $user);
+            $existingDraftId = isset($_POST['draft_id']) ? (int) $_POST['draft_id'] : 0;
+            saveCampusProposalDraft($user, $_POST, $existingDraftId > 0 ? $existingDraftId : null);
+            setFlash('success', 'Draft saved.');
+            redirect(routePath('dashboard/campus-admin') . '?tab=submit');
+        } catch (Throwable $exception) {
+            setFlash('error', $exception->getMessage());
+            redirect(routePath('dashboard/campus-admin') . '?tab=submit');
+        }
+    }
+
+    if ($action === 'delete_draft') {
+        $draftId = (int) ($_POST['draft_id'] ?? 0);
+        if ($draftId > 0 && deleteCampusProposalDraft($user, $draftId)) {
+            setFlash('success', 'Draft deleted.');
+        } else {
+            setFlash('error', 'That draft could not be deleted.');
+        }
+        $query = '?tab=' . rawurlencode($returnTab);
+        if ($returnTab === 'agreements' && isset($_GET['status'])) {
+            $query .= '&status=' . rawurlencode((string) $_GET['status']);
+        }
+        redirect(routePath('dashboard/campus-admin') . $query);
     }
 
     if ($action === 'submit_proposal') {
@@ -37,7 +62,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         try {
+            lockCampusAdminFormCampus($_POST, $user);
             $proposalId = createCampusProposal($_POST, $user, 'pending');
+            $submittedDraftId = isset($_POST['draft_id']) ? (int) $_POST['draft_id'] : 0;
+            if ($submittedDraftId > 0) {
+                deleteCampusProposalDraft($user, $submittedDraftId);
+            }
             setFlash('success', 'Proposal #' . $proposalId . ' has been submitted to the Partnership Director for review.');
             redirect(routePath('dashboard/campus-admin') . '?tab=review');
         } catch (Throwable $exception) {
@@ -47,7 +77,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$draft = getCampusProposalDraft($user);
+$editingDraftId = isset($_GET['draft']) ? (int) $_GET['draft'] : 0;
+$draft = [];
+if ($editingDraftId > 0) {
+    $draftRow = fetchCampusProposalDraftById($pdo, (int) ($user['id'] ?? 0), $editingDraftId);
+    if ($draftRow === null) {
+        setFlash('error', 'That draft was not found.');
+        redirect(routePath('dashboard/campus-admin') . '?tab=submit');
+    }
+    $draft = $draftRow['form'] ?? [];
+}
+$drafts = listCampusProposalDrafts($user);
 $approvedProposals = getProposalsByStatus('approved', $user);
 $rejectedProposals = getProposalsByStatus('rejected', $user);
 
@@ -96,20 +136,6 @@ renderCampusAdminDashboardHeader(
 );
 ?>
 
-<?php if ($message = flashMessage('success')): ?>
-    <div class="alert alert-success alert-dismissible fade show mb-2 py-2" role="alert">
-        <?= e($message) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
-
-<?php if ($message = flashMessage('error')): ?>
-    <div class="alert alert-danger alert-dismissible fade show mb-2 py-2" role="alert">
-        <?= e($message) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
-
 <?php require __DIR__ . '/includes/views/campus-admin-hero-slideshow.php'; ?>
 
 <div class="app-subnav app-subnav-bleed">
@@ -145,14 +171,24 @@ renderCampusAdminDashboardHeader(
 <?php endif; ?>
 
 <?php if ($activeTab === 'submit'): ?>
+    <?php
+    $draftsReturnTab = 'submit';
+    require __DIR__ . '/includes/views/campus-admin-drafts.php';
+    ?>
     <?php require __DIR__ . '/includes/campus-intake-form.php'; ?>
     <script src="<?= e(assetUrl('js/campus-intake-form.js')) ?>"></script>
 <?php elseif ($activeTab === 'agreements'): ?>
     <?php
+    $draftsReturnTab = 'agreements';
+    require __DIR__ . '/includes/views/campus-admin-drafts.php';
     $agreements = $registryAgreements;
     require __DIR__ . '/includes/views/campus-admin-agreements.php';
     ?>
 <?php else: ?>
+    <?php
+    $draftsReturnTab = 'review';
+    require __DIR__ . '/includes/views/campus-admin-drafts.php';
+    ?>
     <div class="review-grid">
         <section class="review-panel">
             <div class="review-panel-header">

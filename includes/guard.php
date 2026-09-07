@@ -302,11 +302,26 @@ function fetchUserById(PDO $pdo, int $userId): ?array
     return $user ? normalizeUserRow($user) : null;
 }
 
+function fetchPartnershipDirector(PDO $pdo): ?array
+{
+    $sql = buildUserSelectSql($pdo) . " WHERE u.Role IN ('Partnership Director', 'partnership_director') LIMIT 1";
+    $row = $pdo->query($sql)->fetch();
+
+    if (!$row) {
+        return null;
+    }
+
+    $profile = formatUserProfile(normalizeUserRow($row));
+    $profile['phone'] = trim((string) ($row['Phone_Number'] ?? ''));
+
+    return $profile;
+}
+
 function fetchUserByEmail(PDO $pdo, string $email): ?array
 {
-    $sql = buildUserSelectSql($pdo, true) . ' WHERE u.Email = :email LIMIT 1';
+    $sql = buildUserSelectSql($pdo, true) . ' WHERE LOWER(u.Email) = :email LIMIT 1';
     $stmt = $pdo->prepare($sql);
-    $stmt->execute(['email' => $email]);
+    $stmt->execute(['email' => strtolower(trim($email))]);
     $user = $stmt->fetch();
 
     return $user ? normalizeUserRow($user) : null;
@@ -315,6 +330,21 @@ function fetchUserByEmail(PDO $pdo, string $email): ?array
 function usersTableHasPasswordColumn(PDO $pdo): bool
 {
     return usersTableMeta($pdo)['has_password'];
+}
+
+function verifyUserPassword(string $plainPassword, ?string $storedPassword): bool
+{
+    if ($storedPassword === null || $storedPassword === '') {
+        return false;
+    }
+
+    $info = password_get_info($storedPassword);
+
+    if (($info['algo'] ?? 0) !== 0) {
+        return password_verify($plainPassword, $storedPassword);
+    }
+
+    return hash_equals($storedPassword, $plainPassword);
 }
 
 function defaultUserAvatarUrl(string $fullName): string
@@ -371,18 +401,28 @@ function deleteUserProfilePhotos(int $userId): void
     }
 }
 
+function profilePhotoMaxBytes(): int
+{
+    return 5 * 1024 * 1024;
+}
+
 function storeUserProfilePhoto(int $userId, array $file): string
 {
-    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+    $maxBytes = profilePhotoMaxBytes();
+    $error = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+
+    if ($error === UPLOAD_ERR_NO_FILE) {
         throw new InvalidArgumentException('Please choose a photo to upload.');
     }
 
-    if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
-        throw new InvalidArgumentException('Unable to upload the photo. Please try again.');
+    if (in_array($error, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)
+        || (int) ($file['size'] ?? 0) > $maxBytes
+    ) {
+        throw new InvalidArgumentException('Photo must be 5 MB or smaller.');
     }
 
-    if (($file['size'] ?? 0) > 2 * 1024 * 1024) {
-        throw new InvalidArgumentException('Photo must be 2 MB or smaller.');
+    if ($error !== UPLOAD_ERR_OK) {
+        throw new InvalidArgumentException('Unable to upload the photo. Please try again.');
     }
 
     $tmpName = (string) ($file['tmp_name'] ?? '');
@@ -607,6 +647,32 @@ function setFlash(string $key, string $message): void
 }
 
 /**
+ * @return list<array{title: string, detail: string, tone: string}>
+ */
+function consumeFlashNotifications(): array
+{
+    $notices = [];
+
+    if ($message = flashMessage('success')) {
+        $notices[] = [
+            'title'  => $message,
+            'detail' => '',
+            'tone'   => 'success',
+        ];
+    }
+
+    if ($message = flashMessage('error')) {
+        $notices[] = [
+            'title'  => $message,
+            'detail' => '',
+            'tone'   => 'error',
+        ];
+    }
+
+    return $notices;
+}
+
+/**
  * Proposal workflow — campus submissions and director review are persisted in the
  * agreement table (Submitted / Approved / Rejected). Only the Active Partnership
  * Entry Form creates registry agreements with Status = Active.
@@ -666,17 +732,53 @@ function updateProposalStatus(int $proposalId, string $status, string $comment =
     };
 }
 
-function getCampusProposalDraft(array $user): array
+function getCampusProposalDraft(array $user, ?int $draftId = null): array
 {
-    $key = $user['staff_id'] ?? $user['email'] ?? 'default';
+    global $pdo;
 
-    return $_SESSION['proposal_drafts'][$key] ?? [];
+    migrateLegacySessionProposalDraft($user);
+
+    if ($draftId === null || $draftId <= 0) {
+        return [];
+    }
+
+    $row = fetchCampusProposalDraftById($pdo, (int) ($user['id'] ?? 0), $draftId);
+
+    return is_array($row) ? ($row['form'] ?? []) : [];
 }
 
-function saveCampusProposalDraft(array $user, array $formData): void
+/**
+ * @return list<array<string, mixed>>
+ */
+function listCampusProposalDrafts(array $user): array
 {
+    global $pdo;
+
+    migrateLegacySessionProposalDraft($user);
+
+    return fetchCampusProposalDrafts($pdo, (int) ($user['id'] ?? 0));
+}
+
+function saveCampusProposalDraft(array $user, array $formData, ?int $draftId = null): int
+{
+    global $pdo;
+
+    $savedId = persistCampusProposalDraft($pdo, $user, $formData, $draftId);
+
     $key = $user['staff_id'] ?? $user['email'] ?? 'default';
-    $_SESSION['proposal_drafts'][$key] = $formData;
+    unset($_SESSION['proposal_drafts'][$key]);
+    if (empty($_SESSION['proposal_drafts'])) {
+        unset($_SESSION['proposal_drafts']);
+    }
+
+    return $savedId;
+}
+
+function deleteCampusProposalDraft(array $user, int $draftId): bool
+{
+    global $pdo;
+
+    return deleteCampusProposalDraftRecord($pdo, (int) ($user['id'] ?? 0), $draftId);
 }
 
 function createCampusProposal(array $formData, array $user, string $status = 'pending'): int
@@ -697,20 +799,16 @@ function renderSiteFooter(): void
 
 function renderDashboardLogoutAction(?array $backLink = null): void
 {
+    if (!is_array($backLink) || empty($backLink['href'])) {
+        return;
+    }
     ?>
     <div class="d-flex justify-content-end align-items-center gap-2 mb-3 app-dashboard-action-bar">
-        <?php if (is_array($backLink) && !empty($backLink['href'])): ?>
-            <a href="<?= e($backLink['href']) ?>"
-               class="btn btn-outline-success btn-sm rounded-circle app-dashboard-icon-btn"
-               title="<?= e($backLink['label'] ?? 'Back') ?>"
-               aria-label="<?= e($backLink['label'] ?? 'Back') ?>">
-                <i class="bi bi-arrow-left" aria-hidden="true"></i>
-            </a>
-        <?php endif; ?>
-        <a href="<?= e(logoutRoute()) ?>"
-           class="btn btn-outline-danger btn-sm d-inline-flex align-items-center gap-2 px-3 app-dashboard-logout-btn">
-            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
-            <span>Logout</span>
+        <a href="<?= e($backLink['href']) ?>"
+           class="btn btn-outline-success btn-sm rounded-circle app-dashboard-icon-btn"
+           title="<?= e($backLink['label'] ?? 'Back') ?>"
+           aria-label="<?= e($backLink['label'] ?? 'Back') ?>">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
         </a>
     </div>
     <?php
@@ -947,8 +1045,8 @@ function renderInstitutionalDashboardHeader(
         'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
         'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
         assetUrl('css/app-shell.css') . '?v=' . (string) (is_file(dirname(__DIR__) . '/css/app-shell.css') ? filemtime(dirname(__DIR__) . '/css/app-shell.css') : time()),
-        assetUrl('css/director-header.css'),
-        assetUrl('css/site-footer.css'),
+        assetUrl('css/director-header.css') . '?v=' . (string) (is_file(dirname(__DIR__) . '/css/director-header.css') ? filemtime(dirname(__DIR__) . '/css/director-header.css') : time()),
+        assetUrl('css/site-footer.css') . '?v=' . (string) (is_file(dirname(__DIR__) . '/css/site-footer.css') ? filemtime(dirname(__DIR__) . '/css/site-footer.css') : time()),
     ], $options['extraStylesheets'] ?? []);
 
     require __DIR__ . '/director-header.php';
@@ -965,8 +1063,9 @@ function renderDirectorDashboardHeader(
         $notificationCount = count($pendingProposals);
     }
 
+    $directorCss = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'director-dashboard.css';
     $extraStylesheets = array_merge(
-        [assetUrl('css/director-dashboard.css')],
+        [assetUrl('css/director-dashboard.css') . '?v=' . (string) (is_file($directorCss) ? filemtime($directorCss) : time())],
         $options['extraStylesheets'] ?? []
     );
 
@@ -975,6 +1074,7 @@ function renderDirectorDashboardHeader(
         'notificationCount'        => $notificationCount,
         'useMockNotificationCount' => false,
         'pageSubtitle'             => $options['pageSubtitle'] ?? 'Review campus proposals and register signed partnerships in the live registry.',
+        'bodyClass'                => $options['bodyClass'] ?? 'app-shell app-header-light director-theme',
         'extraStylesheets'         => $extraStylesheets,
     ]);
 }
@@ -1003,12 +1103,15 @@ function renderCampusAdminDashboardHeader(
     $slideshowCssVersion = is_file($slideshowCss) ? (string) filemtime($slideshowCss) : (string) time();
 
     renderInstitutionalDashboardHeader($user, $pageTitle, [
-        'notifications'         => buildCampusAdminNotifications($approvedProposals, $rejectedProposals),
+        'notifications'         => array_merge(
+            consumeFlashNotifications(),
+            buildCampusAdminNotifications($approvedProposals, $rejectedProposals)
+        ),
         'messageRecipients'     => fetchCampusAdminMessageRecipients($pdo),
         'notificationsHeading'  => 'Proposal Status Updates',
         'messagePlaceholder'    => 'Type your message to the Partnership Director, President, or Executive Officer...',
         'pageSubtitle'          => 'Submit and review proposed partnership agreements.',
-        'bodyClass'             => 'app-shell campus-admin-theme',
+        'bodyClass'             => 'app-shell campus-admin-theme app-header-light',
         'extraStylesheets'      => [
             assetUrl('css/campus-admin-dashboard.css') . '?v=' . $campusAdminCssVersion,
             assetUrl('css/campus-admin-slideshow.css') . '?v=' . $slideshowCssVersion,
@@ -1030,6 +1133,7 @@ function renderExecutiveDashboardHeader(
         'notificationsHeading' => 'Registry Notifications',
         'messagePlaceholder'   => 'Type your message to Campus Admins, Partnership Director, or Executive staff...',
         'pageSubtitle'         => $pageSubtitle,
+        'bodyClass'            => 'app-shell campus-admin-theme app-header-light',
         'extraStylesheets'     => [assetUrl('css/campus-admin-dashboard.css')],
     ]);
 }
@@ -1039,7 +1143,11 @@ function renderDirectorDashboardFooter(): void
     ?>
         </main>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="<?= e(assetUrl('js/director-header.js')) ?>"></script>
+        <?php
+        $headerJs = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'director-header.js';
+        $headerJsVersion = is_file($headerJs) ? (string) filemtime($headerJs) : (string) time();
+        ?>
+        <script src="<?= e(assetUrl('js/director-header.js') . '?v=' . $headerJsVersion) ?>"></script>
         <?php renderSiteFooter(); ?>
     </body>
     </html>
@@ -1058,32 +1166,40 @@ function statusBadgeClasses(string $status): string
 
 function renderMetricCards(array $counts): void
 {
+    $metrics = [
+        [
+            'label'     => 'Total Agreements',
+            'value'     => (int) $counts['Total'],
+            'textClass' => 'text-dark',
+        ],
+        [
+            'label'     => 'Active',
+            'value'     => (int) $counts['Active'],
+            'textClass' => 'text-success',
+        ],
+        [
+            'label'     => 'Expiring Soon',
+            'value'     => (int) ($counts['Expiring Soon'] ?? $counts['Soon to Expire'] ?? 0),
+            'textClass' => 'text-warning',
+        ],
+        [
+            'label'     => 'Expired',
+            'value'     => (int) $counts['Expired'],
+            'textClass' => 'text-danger',
+        ],
+    ];
     ?>
     <div class="row g-3 mb-4">
-        <div class="col-sm-6 col-lg-3">
-            <div class="app-card p-4 h-100">
-                <p class="small text-secondary mb-1">Total Agreements</p>
-                <p class="h3 fw-bold mb-0"><?= (int) $counts['Total'] ?></p>
+        <?php foreach ($metrics as $metric): ?>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card h-100 shadow-sm border director-metric-card">
+                    <div class="card-body <?= e($metric['textClass']) ?>">
+                        <p class="card-subtitle small mb-2"><?= e($metric['label']) ?></p>
+                        <p class="card-title display-6 fw-bold mb-0 lh-1"><?= $metric['value'] ?></p>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <div class="app-card p-4 h-100">
-                <p class="small text-secondary mb-1">Active</p>
-                <p class="h3 fw-bold mb-0 text-success"><?= (int) $counts['Active'] ?></p>
-            </div>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <div class="app-card p-4 h-100">
-                <p class="small text-secondary mb-1">Expiring Soon</p>
-                <p class="h3 fw-bold mb-0 text-warning"><?= (int) ($counts['Expiring Soon'] ?? $counts['Soon to Expire'] ?? 0) ?></p>
-            </div>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <div class="app-card p-4 h-100">
-                <p class="small text-secondary mb-1">Expired</p>
-                <p class="h3 fw-bold mb-0 text-danger"><?= (int) $counts['Expired'] ?></p>
-            </div>
-        </div>
+        <?php endforeach; ?>
     </div>
     <?php
 }

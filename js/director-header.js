@@ -72,9 +72,18 @@ document.querySelectorAll('[data-profile-photo-trigger]').forEach(function (butt
 
 document.querySelectorAll('[data-profile-photo-input]').forEach(function (input) {
     input.addEventListener('change', function () {
-        if (input.files && input.files.length > 0 && input.form) {
-            input.form.submit();
+        if (!input.files || input.files.length === 0 || !input.form) {
+            return;
         }
+
+        var maxBytes = 5 * 1024 * 1024;
+        if (input.files[0].size > maxBytes) {
+            alert('Photo must be 5 MB or smaller.');
+            input.value = '';
+            return;
+        }
+
+        input.form.submit();
     });
 });
 

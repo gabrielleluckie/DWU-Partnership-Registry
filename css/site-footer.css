@@ -1,9 +1,13 @@
-/* DWU PDMIS — shared site footer (all pages) */
+/* DWU PDMIS — shared site footer (all pages). Dark slate, never inherit page theme. */
 
-.site-footer {
-    background-color: #2c333d;
-    border-top: 3px solid #17a2b8;
-    color: #b8bec6;
+.site-footer,
+body.app-shell .site-footer,
+body.app-shell.campus-admin-theme .site-footer,
+body.app-shell.director-theme .site-footer {
+    background: #2c333d !important;
+    background-image: none !important;
+    border-top: 3px solid #17a2b8 !important;
+    color: #b8bec6 !important;
     padding: 36px 28px 40px;
     width: 100%;
     flex-shrink: 0;
@@ -22,30 +26,47 @@
     text-align: center;
 }
 
-.footer-col h3 {
-    color: #ffffff;
+.footer-col h3,
+body.app-shell .site-footer h3,
+body.app-shell.campus-admin-theme .site-footer h3,
+body.app-shell.campus-admin-theme .site-footer .footer-col h3,
+body.app-shell.director-theme .site-footer h3 {
+    color: #ffffff !important;
     font-size: 15px;
     font-weight: 700;
     margin-bottom: 14px;
 }
 
-.footer-col p {
+.footer-col p,
+body.app-shell .site-footer .footer-col p,
+body.app-shell.campus-admin-theme .site-footer .footer-col p,
+body.app-shell.director-theme .site-footer .footer-col p {
     font-size: 13px;
     line-height: 1.65;
-    color: #b8bec6;
+    color: #b8bec6 !important;
     margin: 0;
 }
 
-.footer-col a {
-    color: #3498db;
+.footer-col a,
+body.app-shell .site-footer a,
+body.app-shell.campus-admin-theme .site-footer a,
+body.app-shell.director-theme .site-footer a {
+    color: #3498db !important;
     text-decoration: none;
 }
 
-.footer-col a:hover {
+.footer-col a:hover,
+body.app-shell .site-footer a:hover,
+body.app-shell.campus-admin-theme .site-footer a:hover,
+body.app-shell.director-theme .site-footer a:hover {
+    color: #ffffff !important;
     text-decoration: underline;
 }
 
-.footer-contact-line {
+.footer-contact-line,
+body.app-shell .site-footer .footer-contact-line,
+body.app-shell.campus-admin-theme .site-footer .footer-contact-line,
+body.app-shell.director-theme .site-footer .footer-contact-line {
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -54,7 +75,7 @@
     margin-bottom: 4px;
     font-size: 13px;
     line-height: 1.65;
-    color: #b8bec6;
+    color: #b8bec6 !important;
 }
 
 .footer-icon {

@@ -14,7 +14,6 @@ $redirectTo = safeProfilePhotoRedirect($user);
 
 try {
     storeUserProfilePhoto((int) $user['id'], $_FILES['profile_photo'] ?? []);
-    setFlash('success', 'Your profile photo has been updated.');
 } catch (InvalidArgumentException $exception) {
     setFlash('error', $exception->getMessage());
 } catch (Throwable $exception) {

@@ -3,10 +3,11 @@
 /**
  * Campus Admin — Proposed Partnership Submission Form (Bootstrap 5 Single-Page)
  *
- * Expected: $user (array), $draft (array)
+ * Expected: $user (array), $draft (array), $editingDraftId (int)
  */
 
 $draft = $draft ?? [];
+$editingDraftId = (int) ($editingDraftId ?? 0);
 $today = date('Y-m-d');
 $logoUrl = assetUrl('assets/images/dwu_logo.jpg');
 
@@ -22,19 +23,9 @@ $field = static function (string $name, string $default = '', array $legacy = []
     return $default;
 };
 
-$campusDefault = $field('campus', '', ['submitter_campus']);
-if ($campusDefault === '' && !empty($user['campus'])) {
-    $campusMap = [
-        'Madang' => 'Madang (Main)', 'Rabaul' => 'Rabaul', 'Wewak' => 'Sepik (Wewak)',
-        'Sepik' => 'Sepik (Wewak)', 'Port Moresby' => 'Port Moresby',
-        'Hagen' => 'Mt. Hagen', 'Mt. Hagen' => 'Mt. Hagen',
-    ];
-    foreach ($campusMap as $needle => $value) {
-        if (stripos($user['campus'], $needle) !== false) {
-            $campusDefault = $value;
-            break;
-        }
-    }
+$campusDefault = assignedCampusFormLabel($user);
+if ($campusDefault === '') {
+    $campusDefault = $field('campus', '', ['submitter_campus']);
 }
 
 $checked = static function (string $name, string $value, array $legacy = []) use ($draft, $campusDefault): string {
@@ -94,7 +85,6 @@ $sectionIcons = [
     'g' => 'bi-graph-up-arrow', 'h' => 'bi-paperclip', 'i' => 'bi-pen', 'j' => 'bi-chat-dots',
 ];
 
-$campuses = ['Madang (Main)', 'Rabaul', 'Sepik (Wewak)', 'Port Moresby', 'Mt. Hagen'];
 $partnerTypes = ['University/Academic', 'Govt Agency', 'NGO', 'Private Sector/Industry', "Int'l Org", 'Community Org', 'Other'];
 $agreementTypes = [
     'Memorandum of Understanding (MOU)', 'Memorandum of Agreement (MOA)',
@@ -134,7 +124,7 @@ $intakeCssVersion = is_file($intakeCss) ? (string) filemtime($intakeCss) : (stri
 <div class="row g-3">
 
     <!-- Sticky vertical stepper / jump nav -->
-    <div class="col-lg-auto">
+    <div class="col-lg-auto w-auto partnership-stepper-col">
         <div class="partnership-stepper-card sticky-top rounded-3 shadow-sm p-2">
             <p class="text-uppercase text-muted fw-bold mb-1 px-1 partnership-stepper-label">
                 <i class="bi bi-signpost-split me-1"></i> Jump to Section
@@ -158,6 +148,9 @@ $intakeCssVersion = is_file($intakeCss) ? (string) filemtime($intakeCss) : (stri
               method="post"
               enctype="multipart/form-data"
               novalidate>
+            <?php if ($editingDraftId > 0): ?>
+                <input type="hidden" name="draft_id" value="<?= (int) $editingDraftId ?>">
+            <?php endif; ?>
 
             <!-- Partnership form header — Bootstrap navbar -->
             <header class="partnership-form-header mb-2">
@@ -222,6 +215,13 @@ $intakeCssVersion = is_file($intakeCss) ? (string) filemtime($intakeCss) : (stri
                 </div>
             </header>
 
+            <?php if ($editingDraftId > 0): ?>
+                <div class="alert alert-info campus-admin-editing-draft mb-3" role="status">
+                    <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>
+                    You are editing a saved draft. Save Draft updates this copy and clears the form for a new proposal.
+                </div>
+            <?php endif; ?>
+
             <div id="formErrorBanner" class="alert alert-danger form-error-banner d-none" role="alert"></div>
 
             <!-- Section A -->
@@ -254,19 +254,10 @@ $intakeCssVersion = is_file($intakeCss) ? (string) filemtime($intakeCss) : (stri
                             <input type="tel" class="form-control" id="phone" name="phone" placeholder="+675 XXX XXXX"
                                    value="<?= e($field('phone', '', ['submitter_phone'])) ?>">
                         </div>
-                        <div class="col-12">
-                            <label class="form-label fw-semibold text-secondary small d-block mb-2">Campus <?= $req ?></label>
-                            <div class="row g-2">
-                                <?php foreach ($campuses as $campus):
-                                    $cid = 'campus_' . $slug($campus);
-                                ?>
-                                    <div class="col-sm-6 col-lg-4">
-                                        <input type="radio" class="btn-check" name="campus" id="<?= e($cid) ?>"
-                                               value="<?= e($campus) ?>" required <?= $checked('campus', $campus, ['submitter_campus']) ?>>
-                                        <label class="btn selection-tile w-100" for="<?= e($cid) ?>"><?= e($campus) ?></label>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
+                        <div class="col-md-6 col-lg-4">
+                            <label class="form-label fw-semibold text-secondary small" for="campus_display">Campus <?= $req ?></label>
+                            <input type="hidden" name="campus" value="<?= e($campusDefault) ?>">
+                            <input type="text" class="form-control" id="campus_display" value="<?= e($campusDefault) ?>" readonly>
                         </div>
                     </div>
                 </div>
@@ -684,7 +675,7 @@ $intakeCssVersion = is_file($intakeCss) ? (string) filemtime($intakeCss) : (stri
             <!-- Compact sticky action bar -->
             <div class="partnership-action-bar sticky-bottom py-2 px-3">
                 <div class="d-flex flex-row flex-wrap gap-2 justify-content-end align-items-center">
-                    <button type="submit" name="form_action" value="save_draft"
+                    <button type="submit" name="form_action" value="save_draft" formnovalidate
                             class="btn btn-sm btn-outline-secondary fw-semibold">
                         <i class="bi bi-save me-1"></i> Save Draft
                     </button>

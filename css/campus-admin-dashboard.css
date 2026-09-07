@@ -177,6 +177,62 @@ body.app-shell .review-empty {
     font-size: 0.875rem;
 }
 
+body.app-shell .badge-draft {
+    background: rgba(2, 132, 199, 0.2);
+    color: #7dd3fc;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+body.app-shell .campus-admin-draft-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+body.app-shell .campus-admin-draft-link:hover {
+    color: #7dd3fc;
+    text-decoration: underline;
+}
+
+body.app-shell .campus-admin-draft-item.is-editing {
+    background: rgba(2, 132, 199, 0.08);
+}
+
+body.app-shell .campus-admin-draft-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+}
+
+body.app-shell .campus-admin-draft-delete {
+    margin: 0;
+}
+
+body.app-shell .campus-admin-draft-delete-btn {
+    color: #fda4af;
+    border-color: rgba(225, 29, 72, 0.35);
+}
+
+body.app-shell .campus-admin-draft-delete-btn:hover {
+    color: #fecdd3;
+    border-color: rgba(225, 29, 72, 0.55);
+    background: rgba(225, 29, 72, 0.12);
+}
+
+body.app-shell .partnership-form-shell .campus-admin-editing-draft {
+    background: rgba(2, 132, 199, 0.08);
+    border-color: rgba(2, 132, 199, 0.28);
+    color: #0c4a6e;
+}
+
+body.app-shell .partnership-form-shell .campus-admin-editing-draft .alert-link {
+    color: #0369a1;
+}
+
 /* ── Partnership form shell (submit tab) — white form, black text ── */
 body.app-shell .partnership-form-shell {
     background: #ffffff;
@@ -188,6 +244,8 @@ body.app-shell .partnership-stepper-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    width: fit-content;
+    max-width: 100%;
 }
 
 body.app-shell #partnership-scrollspy .nav-link {
@@ -394,25 +452,6 @@ body.app-shell .partnership-form-shell .bg-white {
 
 body.app-shell .partnership-form-shell h6.text-secondary {
     color: #000000 !important;
-}
-
-/* ── Site footer blend ── */
-body.app-shell .site-footer {
-    background: var(--ca-bg-primary);
-    border-top: 1px solid var(--ca-border);
-    color: var(--ca-text-secondary);
-}
-
-body.app-shell .site-footer h3 {
-    color: var(--ca-text-primary);
-}
-
-body.app-shell .site-footer a {
-    color: #7dd3fc;
-}
-
-body.app-shell .site-footer a:hover {
-    color: var(--ca-text-primary);
 }
 
 /* Override Bootstrap nav-tabs defaults on dark page */
@@ -648,30 +687,6 @@ body.app-shell.campus-admin-theme .nav-tabs .nav-link {
 body.app-shell.campus-admin-theme .nav-tabs .nav-link:hover,
 body.app-shell.campus-admin-theme .nav-tabs .nav-link.active {
     color: #000000;
-}
-
-body.app-shell.campus-admin-theme .site-footer {
-    background-color: #2c333d !important;
-    border-top: 3px solid #17a2b8;
-    color: #b8bec6;
-}
-
-body.app-shell.campus-admin-theme .site-footer h3,
-body.app-shell.campus-admin-theme .site-footer .footer-col h3 {
-    color: #ffffff;
-}
-
-body.app-shell.campus-admin-theme .site-footer a {
-    color: #3498db;
-}
-
-body.app-shell.campus-admin-theme .site-footer a:hover {
-    color: #3498db;
-}
-
-body.app-shell.campus-admin-theme .site-footer .footer-col p,
-body.app-shell.campus-admin-theme .site-footer .footer-contact-line {
-    color: #b8bec6;
 }
 
 body.app-shell.campus-admin-theme .partnership-navbar {
@@ -987,11 +1002,11 @@ body.app-shell.campus-admin-theme .registry-agreement-name {
 }
 
 body.app-shell.campus-admin-theme .agreement-lifespan {
-    color: #334155;
+    color: #0f172a;
 }
 
-body.app-shell.campus-admin-theme .agreement-lifespan .text-warning-emphasis {
-    color: #92400e !important;
+body.app-shell.campus-admin-theme .agreement-lifespan .lifespan-duration {
+    color: #475569;
 }
 
 body.app-shell.campus-admin-theme .registry-detail {

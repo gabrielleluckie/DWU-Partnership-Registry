@@ -50,6 +50,30 @@ body.app-shell .app-card {
     color: var(--app-text);
 }
 
+body.app-shell .app-card.app-metric-total {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #000000;
+}
+
+body.app-shell .app-card.app-metric-active {
+    background: #d1fae5;
+    border-color: #34d399;
+    color: #000000;
+}
+
+body.app-shell .app-card.app-metric-expiring {
+    background: #fef08a;
+    border-color: #facc15;
+    color: #000000;
+}
+
+body.app-shell .app-card.app-metric-expired {
+    background: #fecaca;
+    border-color: #f87171;
+    color: #000000;
+}
+
 body.app-shell .app-card-header {
     padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--app-border);
@@ -71,25 +95,6 @@ body.app-shell .alert-danger {
     background: rgba(225, 29, 72, 0.12);
     border-color: rgba(225, 29, 72, 0.35);
     color: #fda4af;
-}
-
-/* Footer */
-body.app-shell .site-footer {
-    background: var(--app-bg);
-    border-top: 1px solid var(--app-border);
-    color: var(--app-muted);
-}
-
-body.app-shell .site-footer h3 {
-    color: var(--app-text);
-}
-
-body.app-shell .site-footer a {
-    color: #7dd3fc;
-}
-
-body.app-shell .site-footer a:hover {
-    color: var(--app-text);
 }
 
 /* Bootstrap nav-tabs on dark pages */

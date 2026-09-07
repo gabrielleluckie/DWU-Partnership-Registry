@@ -105,9 +105,14 @@ a.director-pending-banner {
 a.director-pending-banner:hover,
 a.director-pending-banner:focus {
     color: inherit;
-    border-color: #f59e0b;
-    background-color: #fffbeb;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    border-color: #198754;
+    background-color: #ffffff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+body.app-shell.director-theme a.director-pending-banner {
+    background-color: #ffffff;
+    border-color: #e2e8f0;
 }
 
 a.director-notification-link {
@@ -123,4 +128,151 @@ a.director-notification-link {
 
 a.director-notification-link:hover {
     background: rgba(255, 255, 255, 0.06);
+}
+
+/* Partnership Director dashboard — white page, black text */
+body.app-shell.director-theme {
+    --app-bg: #ffffff;
+    --app-card: #ffffff;
+    --app-card-hover: #ffffff;
+    --app-input: #ffffff;
+    --app-text: #000000;
+    --app-muted: #000000;
+    --app-border: #e2e8f0;
+    --app-border-strong: #cbd5e1;
+
+    background-color: #ffffff !important;
+    background-image: none !important;
+    color: #000000;
+    color-scheme: light;
+}
+
+html:has(body.app-shell.director-theme) {
+    background: #ffffff;
+}
+
+body.app-shell.director-theme main,
+body.app-shell.director-theme main.campus-admin-main {
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+
+body.app-shell.director-theme .app-page-heading h1,
+body.app-shell.director-theme .app-page-heading p,
+body.app-shell.director-theme .h5:not(.campus-admin-profile-name),
+body.app-shell.director-theme h2:not(.campus-admin-profile-name) {
+    color: #000000;
+}
+
+body.app-shell.director-theme .text-secondary,
+body.app-shell.director-theme .text-emerald-800,
+body.app-shell.director-theme .text-amber-950,
+body.app-shell.director-theme .text-amber-900,
+body.app-shell.director-theme .text-amber-800 {
+    color: #000000 !important;
+}
+
+body.app-shell.director-theme .director-metric-card {
+    background: #ffffff;
+}
+
+body.app-shell.director-theme .director-metric-card .text-success {
+    color: #198754 !important;
+}
+
+body.app-shell.director-theme .director-metric-card .text-warning {
+    color: #d39e00 !important;
+}
+
+body.app-shell.director-theme .director-metric-card .text-danger {
+    color: #dc3545 !important;
+}
+
+body.app-shell.director-theme .app-notification-bar {
+    background: #fefce8 !important;
+    border-top-color: #fde68a !important;
+    border-bottom-color: #fde68a !important;
+    color: #000000;
+}
+
+body.app-shell.director-theme .app-notification-bar .btn-close-white {
+    filter: none;
+}
+
+body.app-shell.director-theme .app-subnav {
+    background: #ffffff;
+    border-bottom-color: #e2e8f0;
+}
+
+body.app-shell.director-theme .app-subnav .nav-link {
+    color: #000000;
+}
+
+body.app-shell.director-theme .app-subnav .nav-link:hover,
+body.app-shell.director-theme .app-subnav .nav-link.active {
+    color: #000000;
+    border-bottom-color: #86efac !important;
+}
+
+body.app-shell.director-theme .app-card {
+    background: #ffffff;
+    color: #000000;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+body.app-shell.director-theme .app-card.app-metric-total {
+    background: #ffffff;
+    border-color: #cbd5e1;
+}
+
+body.app-shell.director-theme .app-card.app-metric-active {
+    background: #d1fae5;
+    border-color: #34d399;
+}
+
+body.app-shell.director-theme .app-card.app-metric-expiring {
+    background: #fef08a;
+    border-color: #facc15;
+}
+
+body.app-shell.director-theme .app-card.app-metric-expired {
+    background: #fecaca;
+    border-color: #f87171;
+}
+
+body.app-shell.director-theme .director-panel,
+body.app-shell.director-theme .director-entry-form-panel {
+    background: #ffffff;
+    color: #000000;
+    border-color: #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+body.app-shell.director-theme .director-panel-header {
+    background: #ffffff;
+    border-bottom-color: #e2e8f0;
+}
+
+body.app-shell.director-theme .director-panel-header h1,
+body.app-shell.director-theme .director-panel-header h2,
+body.app-shell.director-theme .director-panel-header p {
+    color: #000000;
+}
+
+body.app-shell.director-theme .btn-outline-success {
+    --bs-btn-color: #000000;
+    --bs-btn-border-color: #000000;
+    --bs-btn-hover-color: #ffffff;
+    --bs-btn-hover-bg: #000000;
+    --bs-btn-hover-border-color: #000000;
+}
+
+body.app-shell.director-theme .director-proposal-item {
+    border-bottom-color: #e2e8f0;
+}
+
+body.app-shell.director-theme .app-card-header {
+    background: #ffffff;
+    border-bottom-color: #e2e8f0;
 }

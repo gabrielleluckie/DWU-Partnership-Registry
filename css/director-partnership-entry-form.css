@@ -10,6 +10,53 @@ body.app-shell .director-entry-form-panel {
     background: #ffffff;
 }
 
+body.app-shell.director-theme .director-entry-form-panel,
+body.app-shell.director-theme .director-entry-form-panel.director-panel {
+    background: #ffffff;
+    color: #0f172a;
+    border-color: #e2e8f0;
+}
+
+body.app-shell.director-theme .director-entry-form-panel .director-panel-header {
+    background: #ffffff;
+    border-bottom-color: #e2e8f0;
+}
+
+body.app-shell.director-theme .director-entry-form-panel .director-panel-header h1,
+body.app-shell.director-theme .director-entry-form-panel .director-panel-header h2 {
+    color: #0f172a;
+}
+
+body.app-shell.director-theme .director-entry-form-panel .director-panel-header p {
+    color: #64748b;
+}
+
+body.app-shell.director-theme .director-entry-form-shell {
+    background: #ffffff;
+    color: #0f172a;
+}
+
+body.app-shell.director-theme .director-entry-form-shell fieldset {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+
+body.app-shell.director-theme .director-entry-form-shell legend,
+body.app-shell.director-theme .director-entry-form-shell label {
+    color: #334155;
+}
+
+body.app-shell.director-theme .director-entry-mode-option {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #0f172a;
+}
+
+body.app-shell.director-theme .director-entry-mode-option:has(:checked) {
+    border-color: #006633;
+    background: #f8fafc;
+}
+
 body.app-shell .director-entry-form-shell {
     color: #0f172a;
     display: grid;

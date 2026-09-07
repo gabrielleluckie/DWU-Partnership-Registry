@@ -128,6 +128,41 @@ function enrichAgreementRow(array $row): array
     return array_merge($row, $model->toListingArray());
 }
 
+function assignedCampusFormLabel(array $user): string
+{
+    $campus = trim((string) ($user['campus'] ?? ''));
+    $map = [
+        'Madang' => 'Madang (Main)',
+        'Rabaul' => 'Rabaul',
+        'Wewak' => 'Sepik (Wewak)',
+        'Sepik' => 'Sepik (Wewak)',
+        'Port Moresby' => 'Port Moresby',
+        'POM' => 'Port Moresby',
+        'Hagen' => 'Mt. Hagen',
+        'Mt. Hagen' => 'Mt. Hagen',
+    ];
+
+    foreach ($map as $needle => $value) {
+        if ($campus !== '' && stripos($campus, $needle) !== false) {
+            return $value;
+        }
+    }
+
+    return $campus;
+}
+
+/** @param array<string, mixed> $formData */
+function lockCampusAdminFormCampus(array &$formData, array $user): void
+{
+    $campus = assignedCampusFormLabel($user);
+    if ($campus === '') {
+        return;
+    }
+
+    $formData['campus'] = $campus;
+    $formData['submitter_campus'] = $campus;
+}
+
 function campusTableName(PDO $pdo): string
 {
     static $name = null;
@@ -1361,5 +1396,245 @@ function rejectProposal(PDO $pdo, int $agreeId, int $directorUserId, string $rea
     } catch (Throwable $exception) {
         $pdo->rollBack();
         throw $exception;
+    }
+}
+
+function proposalDraftTableName(PDO $pdo): string
+{
+    static $ensured = false;
+    $table = 'proposal_draft';
+
+    if ($ensured) {
+        return $table;
+    }
+
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS `{$table}` (
+            Draft_ID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            User_ID INT NOT NULL,
+            Campus_ID INT NULL DEFAULT NULL,
+            Title VARCHAR(255) NOT NULL DEFAULT 'Untitled draft',
+            Partner_Name VARCHAR(255) NULL DEFAULT NULL,
+            Agreement_Type VARCHAR(255) NULL DEFAULT NULL,
+            Campus_Name VARCHAR(255) NULL DEFAULT NULL,
+            Form_Data LONGTEXT NOT NULL,
+            Created_At DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            Updated_At DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (Draft_ID),
+            KEY idx_proposal_draft_user (User_ID)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
+    $ensured = true;
+
+    return $table;
+}
+
+/** @return array<string, mixed> */
+function sanitizeProposalDraftFormData(array $formData): array
+{
+    unset($formData['form_action'], $formData['draft_id'], $formData['return_tab']);
+
+    return $formData;
+}
+
+function proposalDraftTitle(array $formData): string
+{
+    $partner = trim((string) ($formData['partner_name'] ?? $formData['partner_legal_name'] ?? ''));
+
+    return $partner !== '' ? $partner : 'Untitled draft';
+}
+
+function formatProposalDraftTimestamp(?string $value): string
+{
+    if ($value === null || $value === '') {
+        return date('M j, Y g:i A');
+    }
+
+    $timestamp = strtotime($value);
+
+    return $timestamp ? date('M j, Y g:i A', $timestamp) : date('M j, Y g:i A');
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function formatProposalDraftRow(array $row, bool $includeForm = false): array
+{
+    $form = [];
+    if ($includeForm) {
+        $decoded = json_decode((string) ($row['Form_Data'] ?? ''), true);
+        $form = is_array($decoded) ? $decoded : [];
+    }
+
+    return [
+        'id'              => (int) ($row['Draft_ID'] ?? 0),
+        'title'           => (string) ($row['Title'] ?? 'Untitled draft'),
+        'partner_name'    => (string) ($row['Partner_Name'] ?? ''),
+        'agreement_type'  => (string) ($row['Agreement_Type'] ?? ''),
+        'campus'          => (string) ($row['Campus_Name'] ?? ''),
+        'saved_at'        => formatProposalDraftTimestamp($row['Updated_At'] ?? null),
+        'created_at'      => formatProposalDraftTimestamp($row['Created_At'] ?? null),
+        'form'            => $form,
+    ];
+}
+
+/**
+ * @return list<array<string, mixed>>
+ */
+function fetchCampusProposalDrafts(PDO $pdo, int $userId): array
+{
+    if ($userId <= 0) {
+        return [];
+    }
+
+    $table = proposalDraftTableName($pdo);
+    $stmt = $pdo->prepare(
+        "SELECT Draft_ID, User_ID, Campus_ID, Title, Partner_Name, Agreement_Type, Campus_Name, Created_At, Updated_At
+         FROM `{$table}`
+         WHERE User_ID = :user_id
+         ORDER BY Updated_At DESC, Draft_ID DESC"
+    );
+    $stmt->execute(['user_id' => $userId]);
+
+    $drafts = [];
+    while ($row = $stmt->fetch()) {
+        $drafts[] = formatProposalDraftRow($row);
+    }
+
+    return $drafts;
+}
+
+/** @return array<string, mixed>|null */
+function fetchCampusProposalDraftById(PDO $pdo, int $userId, int $draftId): ?array
+{
+    if ($userId <= 0 || $draftId <= 0) {
+        return null;
+    }
+
+    $table = proposalDraftTableName($pdo);
+    $stmt = $pdo->prepare(
+        "SELECT Draft_ID, User_ID, Campus_ID, Title, Partner_Name, Agreement_Type, Campus_Name,
+                Form_Data, Created_At, Updated_At
+         FROM `{$table}`
+         WHERE Draft_ID = :draft_id AND User_ID = :user_id
+         LIMIT 1"
+    );
+    $stmt->execute([
+        'draft_id' => $draftId,
+        'user_id'  => $userId,
+    ]);
+    $row = $stmt->fetch();
+
+    return $row === false ? null : formatProposalDraftRow($row, true);
+}
+
+function persistCampusProposalDraft(PDO $pdo, array $user, array $formData, ?int $draftId = null): int
+{
+    $userId = (int) ($user['id'] ?? 0);
+    if ($userId <= 0) {
+        throw new InvalidArgumentException('A valid campus admin session is required to save a draft.');
+    }
+
+    $clean = sanitizeProposalDraftFormData($formData);
+    $payload = json_encode($clean, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    $title = proposalDraftTitle($clean);
+    $partnerName = trim((string) ($clean['partner_name'] ?? $clean['partner_legal_name'] ?? ''));
+    $agreementType = trim((string) ($clean['agreement_type'] ?? ''));
+    $campusName = trim((string) ($clean['campus'] ?? $clean['submitter_campus'] ?? $user['campus'] ?? ''));
+    $campusId = isset($user['campus_id']) && (int) $user['campus_id'] > 0
+        ? (int) $user['campus_id']
+        : null;
+
+    $table = proposalDraftTableName($pdo);
+
+    if ($draftId !== null && $draftId > 0) {
+        $existing = fetchCampusProposalDraftById($pdo, $userId, $draftId);
+        if ($existing !== null) {
+            $update = $pdo->prepare(
+                "UPDATE `{$table}`
+                 SET Title = :title,
+                     Partner_Name = :partner_name,
+                     Agreement_Type = :agreement_type,
+                     Campus_Name = :campus_name,
+                     Campus_ID = :campus_id,
+                     Form_Data = :form_data,
+                     Updated_At = NOW()
+                 WHERE Draft_ID = :draft_id AND User_ID = :user_id"
+            );
+            $update->execute([
+                'title'           => $title,
+                'partner_name'    => $partnerName !== '' ? $partnerName : null,
+                'agreement_type'  => $agreementType !== '' ? $agreementType : null,
+                'campus_name'     => $campusName !== '' ? $campusName : null,
+                'campus_id'       => $campusId,
+                'form_data'       => $payload,
+                'draft_id'        => $draftId,
+                'user_id'         => $userId,
+            ]);
+
+            return $draftId;
+        }
+    }
+
+    $insert = $pdo->prepare(
+        "INSERT INTO `{$table}`
+            (User_ID, Campus_ID, Title, Partner_Name, Agreement_Type, Campus_Name, Form_Data)
+         VALUES
+            (:user_id, :campus_id, :title, :partner_name, :agreement_type, :campus_name, :form_data)"
+    );
+    $insert->execute([
+        'user_id'         => $userId,
+        'campus_id'       => $campusId,
+        'title'           => $title,
+        'partner_name'    => $partnerName !== '' ? $partnerName : null,
+        'agreement_type'  => $agreementType !== '' ? $agreementType : null,
+        'campus_name'     => $campusName !== '' ? $campusName : null,
+        'form_data'       => $payload,
+    ]);
+
+    return (int) $pdo->lastInsertId();
+}
+
+function deleteCampusProposalDraftRecord(PDO $pdo, int $userId, int $draftId): bool
+{
+    if ($userId <= 0 || $draftId <= 0) {
+        return false;
+    }
+
+    $table = proposalDraftTableName($pdo);
+    $stmt = $pdo->prepare(
+        "DELETE FROM `{$table}` WHERE Draft_ID = :draft_id AND User_ID = :user_id"
+    );
+    $stmt->execute([
+        'draft_id' => $draftId,
+        'user_id'  => $userId,
+    ]);
+
+    return $stmt->rowCount() > 0;
+}
+
+function migrateLegacySessionProposalDraft(array $user): void
+{
+    $key = $user['staff_id'] ?? $user['email'] ?? 'default';
+    $legacy = $_SESSION['proposal_drafts'][$key] ?? null;
+
+    if (!is_array($legacy) || $legacy === []) {
+        return;
+    }
+
+    $looksLikeForm = isset($legacy['partner_name'])
+        || isset($legacy['partner_legal_name'])
+        || isset($legacy['staff_name'])
+        || isset($legacy['form_action'])
+        || isset($legacy['agreement_type']);
+
+    if ($looksLikeForm) {
+        persistCampusProposalDraft($GLOBALS['pdo'], $user, $legacy);
+    }
+
+    unset($_SESSION['proposal_drafts'][$key]);
+    if (empty($_SESSION['proposal_drafts'])) {
+        unset($_SESSION['proposal_drafts']);
     }
 }

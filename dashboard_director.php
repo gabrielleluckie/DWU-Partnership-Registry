@@ -26,10 +26,10 @@ renderDirectorSubnav('overview', $pendingCount);
 
 <?php if ($pendingCount > 0): ?>
     <a href="<?= e(directorReviewPath()) ?>"
-       class="director-pending-banner mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-sm text-decoration-none d-block"
+       class="director-pending-banner mb-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm text-decoration-none d-block"
        aria-label="Open pending proposals for review">
         <div class="flex flex-wrap items-start gap-3">
-            <span class="inline-flex shrink-0 items-center rounded-full bg-amber-200 px-2.5 py-0.5 text-xs font-bold text-amber-900">
+            <span class="inline-flex shrink-0 items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
                 <?= (int) $pendingCount ?> pending
             </span>
             <div class="min-w-0 flex-1">
@@ -53,8 +53,8 @@ renderDirectorSubnav('overview', $pendingCount);
 
 <section class="mb-8">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
-        <h2 class="h5 mb-0 text-white">Executive Analytics Overview</h2>
-        <a href="<?= e(routePath('dashboard/registry')) ?>" class="btn btn-sm btn-outline-success">
+        <h2 class="h5 mb-0">Executive Analytics Overview</h2>
+        <a href="<?= e(routePath('dashboard/registry')) ?>" class="btn btn-sm btn-outline-dark">
             <i class="bi bi-table me-1"></i> Open Registry Dashboard
         </a>
     </div>
@@ -64,8 +64,8 @@ renderDirectorSubnav('overview', $pendingCount);
 <section class="director-panel">
     <div class="director-panel-header d-flex flex-wrap align-items-center justify-content-between gap-2">
         <div>
-            <h2>Approved Proposals (Ready for Offline Negotiation)</h2>
-            <p>Read-only audit log of proposals cleared for external legal negotiations (Status = Approved).</p>
+            <h2>Approved Proposals</h2>
+            <p>Proposals that have been approved and are ready for negotiations.</p>
         </div>
         <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
             <?= (int) $approvedCount ?> approved

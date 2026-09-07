@@ -55,8 +55,14 @@ renderDirectorDashboardHeader(
     $pendingProposals,
     $pendingCount,
     [
-        'pageSubtitle'     => 'The only path to register signed agreements in the live registry with Status = Active.',
-        'extraStylesheets' => [assetUrl('css/director-partnership-entry-form.css')],
+        'pageSubtitle'     => 'Register a signed partnership agreement.',
+        'extraStylesheets' => [
+            assetUrl('css/director-partnership-entry-form.css') . '?v=' . (string) (
+                is_file(__DIR__ . '/css/director-partnership-entry-form.css')
+                    ? filemtime(__DIR__ . '/css/director-partnership-entry-form.css')
+                    : time()
+            ),
+        ],
     ]
 );
 
@@ -69,7 +75,7 @@ renderDirectorSubnav('register', $pendingCount);
     <section class="director-entry-form-panel director-panel">
         <div class="director-panel-header">
             <h1>Active Partnership Entry Form</h1>
-            <p>The only path to register signed agreements in the live registry with Status = Active.</p>
+            <p>Register a signed partnership agreement.</p>
         </div>
 
         <?php require __DIR__ . '/includes/views/director-partnership-entry-form.php'; ?>

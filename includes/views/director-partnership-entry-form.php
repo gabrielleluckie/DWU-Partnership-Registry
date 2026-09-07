@@ -40,22 +40,17 @@ $textareaClass = 'form-control w-full rounded-lg border border-slate-300 px-3 py
 
     <input type="hidden" name="action" value="register_agreement">
 
-    <div class="director-form-full rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
-        Submit this form after campus review is complete. This is the only path that writes official records to
-        <code class="text-xs">partner</code>, <code class="text-xs">contact</code>, and <code class="text-xs">agreement</code>.
-    </div>
-
     <!-- 1. Partner selection -->
-    <fieldset class="space-y-4 rounded-xl border border-slate-200 p-4">
-        <legend class="px-1 text-sm font-semibold text-slate-900">1. Partner Organisation</legend>
+    <fieldset class="space-y-4 rounded-xl border p-4">
+        <legend class="px-1 text-sm font-semibold">1. Partner Organisation</legend>
 
         <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Partner entry mode">
-            <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 has-[:checked]:border-dwu-green has-[:checked]:bg-emerald-50">
-                <input type="radio" name="partner_mode" value="existing" class="text-dwu-green focus:ring-dwu-green" checked>
+            <label class="director-entry-mode-option inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm">
+                <input type="radio" name="partner_mode" value="existing" class="text-amber-600 focus:ring-amber-400" checked>
                 Select Existing Partner
             </label>
-            <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 has-[:checked]:border-dwu-green has-[:checked]:bg-emerald-50">
-                <input type="radio" name="partner_mode" value="new" class="text-dwu-green focus:ring-dwu-green">
+            <label class="director-entry-mode-option inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm">
+                <input type="radio" name="partner_mode" value="new" class="text-amber-600 focus:ring-amber-400">
                 + Register New Partner
             </label>
         </div>
@@ -98,8 +93,8 @@ $textareaClass = 'form-control w-full rounded-lg border border-slate-300 px-3 py
     </fieldset>
 
     <!-- 2. Managing campus -->
-    <fieldset class="space-y-3 rounded-xl border border-slate-200 p-4">
-        <legend class="px-1 text-sm font-semibold text-slate-900">2. Managing DWU Campus</legend>
+    <fieldset class="space-y-3 rounded-xl border p-4">
+        <legend class="px-1 text-sm font-semibold">2. Managing DWU Campus</legend>
         <label for="campus_id" class="mb-1.5 block text-sm font-medium text-slate-700">Campus managing this partnership</label>
         <select id="campus_id" name="campus_id" required class="<?= e($selectClass) ?>">
             <option value="">Select campus...</option>
@@ -110,8 +105,8 @@ $textareaClass = 'form-control w-full rounded-lg border border-slate-300 px-3 py
     </fieldset>
 
     <!-- 3. Primary contact -->
-    <fieldset class="space-y-4 rounded-xl border border-slate-200 p-4">
-        <legend class="px-1 text-sm font-semibold text-slate-900">3. Primary Contact Person</legend>
+    <fieldset class="space-y-4 rounded-xl border p-4">
+        <legend class="px-1 text-sm font-semibold">3. Primary Contact Person</legend>
         <div class="grid gap-4 sm:grid-cols-2">
             <div>
                 <label for="contact_name" class="mb-1.5 block text-sm font-medium text-slate-700">Contact person name</label>
@@ -137,8 +132,8 @@ $textareaClass = 'form-control w-full rounded-lg border border-slate-300 px-3 py
     </fieldset>
 
     <!-- 4. Agreement details -->
-    <fieldset class="space-y-4 rounded-xl border border-slate-200 p-4">
-        <legend class="px-1 text-sm font-semibold text-slate-900">4. Agreement Details &amp; Lifespan</legend>
+    <fieldset class="space-y-4 rounded-xl border p-4">
+        <legend class="px-1 text-sm font-semibold">4. Agreement Details &amp; Lifespan</legend>
         <div class="grid gap-4 sm:grid-cols-2">
             <div>
                 <label for="partnership_type" class="mb-1.5 block text-sm font-medium text-slate-700">Partnership type</label>
@@ -175,8 +170,8 @@ $textareaClass = 'form-control w-full rounded-lg border border-slate-300 px-3 py
     </fieldset>
 
     <!-- 5. Scope -->
-    <fieldset class="space-y-3 rounded-xl border border-slate-200 p-4">
-        <legend class="px-1 text-sm font-semibold text-slate-900">5. Scope &amp; Historical Comments</legend>
+    <fieldset class="space-y-3 rounded-xl border p-4">
+        <legend class="px-1 text-sm font-semibold">5. Scope &amp; Historical Comments</legend>
         <label for="scope_description" class="mb-1.5 block text-sm font-medium text-slate-700">Scope description &amp; funding notes</label>
         <textarea id="scope_description"
                   name="scope_description"
@@ -188,7 +183,7 @@ $textareaClass = 'form-control w-full rounded-lg border border-slate-300 px-3 py
     <div class="director-form-full pt-2">
         <button type="submit"
                 class="w-full rounded-lg bg-dwu-green px-4 py-3 text-sm font-semibold text-white transition hover:bg-dwu-dark sm:w-auto">
-            Register Agreement in Registry
+            Register Agreement
         </button>
     </div>
 </form>

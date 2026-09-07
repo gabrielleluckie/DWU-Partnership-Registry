@@ -68,7 +68,7 @@ renderDirectorSubnav('review', $pendingCount);
             <?php if ($pendingCount === 0): ?>
                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">Queue empty</span>
             <?php else: ?>
-                <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800"><?= (int) $pendingCount ?> in queue</span>
+                <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800"><?= (int) $pendingCount ?> in queue</span>
             <?php endif; ?>
         </div>
 
@@ -99,7 +99,7 @@ renderDirectorSubnav('review', $pendingCount);
                                 · Proposal #<?= (int) $proposal['id'] ?>
                             </p>
                         </div>
-                        <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">Submitted</span>
+                        <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">Submitted</span>
                     </div>
 
                     <p class="mt-3 text-xs text-slate-500 mb-0">

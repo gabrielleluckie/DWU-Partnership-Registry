@@ -90,6 +90,140 @@
     border: 2px solid #006837;
 }
 
+.app-nav-page-title {
+    color: #ffffff;
+}
+
+.app-nav-page-context {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.campus-admin-profile-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    padding: 0;
+    margin: 0 0.5rem 0 auto;
+    border-bottom: none;
+    order: 2;
+    min-width: 0;
+}
+
+.campus-admin-header-profile {
+    max-width: min(100%, 36rem);
+}
+
+.campus-admin-profile-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.campus-admin-photo-trigger {
+    position: relative;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.campus-admin-profile-photo {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #f8a51d;
+    background: #004d26;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+    display: block;
+}
+
+.campus-admin-photo-edit {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 1.45rem;
+    height: 1.45rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #006633;
+    color: #ffffff;
+    font-size: 0.65rem;
+    border: 2px solid #ffffff;
+}
+
+.campus-admin-photo-trigger:hover .campus-admin-photo-edit,
+.campus-admin-photo-trigger:focus-visible .campus-admin-photo-edit {
+    background: #004d26;
+}
+
+.campus-admin-profile-kicker {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.campus-admin-profile-name,
+body.app-shell .campus-admin-profile-name,
+body.app-shell.director-theme .campus-admin-profile-name,
+body.app-shell.campus-admin-theme .campus-admin-profile-name {
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
+.campus-admin-profile-meta {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.75rem;
+}
+
+.app-navbar .app-dashboard-logout-btn {
+    --bs-btn-color: #fecaca;
+    --bs-btn-border-color: rgba(252, 165, 165, 0.75);
+    --bs-btn-hover-color: #ffffff;
+    --bs-btn-hover-bg: #dc2626;
+    --bs-btn-hover-border-color: #dc2626;
+    white-space: nowrap;
+}
+
+@media (max-width: 991.98px) {
+    .campus-admin-profile-kicker {
+        display: none;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .campus-admin-profile-copy {
+        display: none;
+    }
+
+    .campus-admin-profile-photo {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+@media (min-width: 992px) {
+    .campus-admin-header-collapse {
+        flex-grow: 1;
+        justify-content: flex-end;
+    }
+
+    .campus-admin-profile-bar {
+        order: 3;
+        margin-left: 0.75rem;
+    }
+}
+
 .app-user-name {
     color: #7ec8e3;
     font-size: 0.8125rem;
@@ -130,16 +264,16 @@
 }
 
 .app-nav-back-link {
-    border-color: rgba(255, 255, 255, 0.55) !important;
-    color: #fff !important;
+    border-color: #d1d5db !important;
+    color: #1f2937 !important;
     font-weight: 600;
     white-space: nowrap;
 }
 
 .app-nav-back-link:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: #f8a51d !important;
-    color: #fff !important;
+    background: #f3f4f6;
+    border-color: #006633 !important;
+    color: #111827 !important;
 }
 
 .app-user-avatar {
@@ -222,6 +356,16 @@ body.app-shell main.campus-admin-main {
     color: #f8a51d;
     margin-top: 0.15rem;
     filter: drop-shadow(0 0 6px rgba(248, 165, 29, 0.4));
+}
+
+.app-notification-bar-success .app-notification-icon {
+    color: #6ee7b7;
+    filter: drop-shadow(0 0 6px rgba(110, 231, 183, 0.35));
+}
+
+.app-notification-bar-error .app-notification-icon {
+    color: #fda4af;
+    filter: drop-shadow(0 0 6px rgba(253, 164, 175, 0.35));
 }
 
 a.app-notification-bar-link {

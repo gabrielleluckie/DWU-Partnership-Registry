@@ -26,8 +26,6 @@ $extraStylesheets = $extraStylesheets ?? [];
 
 $showNotificationBar = $notifications !== [];
 $primaryNotice = $notifications[0] ?? null;
-$logoutUrl = logoutRoute();
-$isCampusAdminHeader = str_contains((string) $bodyClass, 'campus-admin-theme');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -35,7 +33,11 @@ $isCampusAdminHeader = str_contains((string) $bodyClass, 'campus-admin-theme');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?> — DWU PDMIS</title>
-    <link rel="stylesheet" href="<?= e(assetUrl('css/site-footer.css')) ?>">
+    <?php
+    $siteFooterCss = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'site-footer.css';
+    $siteFooterCssVersion = is_file($siteFooterCss) ? (string) filemtime($siteFooterCss) : (string) time();
+    ?>
+    <link rel="stylesheet" href="<?= e(assetUrl('css/site-footer.css') . '?v=' . $siteFooterCssVersion) ?>">
     <?php foreach ($extraStylesheets as $stylesheet): ?>
         <link rel="stylesheet" href="<?= e($stylesheet) ?>">
     <?php endforeach; ?>
@@ -63,11 +65,11 @@ $isCampusAdminHeader = str_contains((string) $bodyClass, 'campus-admin-theme');
 
 <!-- Global application navbar -->
 <header class="app-global-header sticky-top">
-    <nav class="navbar navbar-expand-lg navbar-dark app-navbar shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark app-navbar">
         <div class="container-fluid px-3 px-lg-4 py-2">
 
             <!-- Brand -->
-            <a class="navbar-brand app-navbar-brand d-flex align-items-center gap-3 me-lg-4 <?= $isCampusAdminHeader ? 'order-1' : '' ?>"
+            <a class="navbar-brand app-navbar-brand d-flex align-items-center gap-3 me-lg-4 order-1"
                href="<?= e(dashboardForRole($user['role'] ?? '') ?? loginRoute()) ?>">
                 <img src="<?= e($logoUrl) ?>"
                      alt="Divine Word University"
@@ -79,12 +81,10 @@ $isCampusAdminHeader = str_contains((string) $bodyClass, 'campus-admin-theme');
                 </span>
             </a>
 
-            <?php if ($isCampusAdminHeader): ?>
-                <?php require __DIR__ . '/views/campus-admin-profile-bar.php'; ?>
-            <?php endif; ?>
+            <?php require __DIR__ . '/views/campus-admin-profile-bar.php'; ?>
 
             <!-- Mobile toggle -->
-            <button class="navbar-toggler app-navbar-toggler border-0 <?= $isCampusAdminHeader ? 'order-3' : 'ms-auto' ?>"
+            <button class="navbar-toggler app-navbar-toggler border-0 order-3"
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#appNavbarCollapse"
@@ -95,12 +95,12 @@ $isCampusAdminHeader = str_contains((string) $bodyClass, 'campus-admin-theme');
             </button>
 
             <!-- Collapsible actions -->
-            <div class="collapse navbar-collapse <?= $isCampusAdminHeader ? 'campus-admin-header-collapse order-4 order-lg-2' : '' ?>" id="appNavbarCollapse">
+            <div class="collapse navbar-collapse campus-admin-header-collapse order-4 order-lg-2" id="appNavbarCollapse">
                 <div class="navbar-nav ms-lg-auto align-items-lg-center gap-lg-2 py-2 py-lg-0 w-100 w-lg-auto">
 
                     <!-- Page context (visible on mobile in collapse) -->
-                    <div class="app-nav-page-context d-lg-none mb-3 pb-3 border-bottom border-secondary border-opacity-25">
-                        <p class="small text-white fw-semibold mb-0"><?= e($pageTitle) ?></p>
+                    <div class="app-nav-page-context d-lg-none mb-3 pb-3 border-bottom">
+                        <p class="small fw-semibold mb-0 app-nav-page-title"><?= e($pageTitle) ?></p>
                         <?php if ($pageSubtitle !== ''): ?>
                             <p class="small text-secondary mb-0"><?= e($pageSubtitle) ?></p>
                         <?php endif; ?>
@@ -186,112 +186,46 @@ $isCampusAdminHeader = str_contains((string) $bodyClass, 'campus-admin-theme');
                         </div>
                     </div>
 
-                    <?php if (!$isCampusAdminHeader): ?>
-                    <!-- User profile + logout -->
-                    <div class="nav-item d-flex align-items-center gap-2 ms-lg-2 app-user-nav-cluster">
-                        <div class="app-user-summary d-none d-lg-block text-end">
-                            <span class="app-user-name d-block"><?= e($user['display_name'] ?? strtoupper($user['name'])) ?></span>
-                            <span class="app-user-role d-block"><?= e($user['role']) ?></span>
-                        </div>
-
-                        <div class="position-relative" id="directorUserMenu">
-                            <button type="button"
-                                    id="directorUserBtn"
-                                    class="btn btn-link nav-link app-nav-action app-user-trigger d-flex align-items-center gap-2 px-2 py-1"
-                                    aria-expanded="false"
-                                    aria-haspopup="true">
-                                <img class="app-user-avatar rounded-circle"
-                                     src="<?= e($user['avatar']) ?>"
-                                     alt="<?= e($user['name']) ?>"
-                                     width="40" height="40">
-                                <i class="bi bi-chevron-down small opacity-75 d-none d-lg-inline"></i>
-                            </button>
-                            <div class="director-dropdown-panel" id="directorUserPanel" role="menu">
-                                <div class="director-user-dropdown-header">
-                                    <img class="director-user-avatar rounded-circle" src="<?= e($user['avatar']) ?>" alt="">
-                                    <div>
-                                        <h3><?= e($user['name']) ?></h3>
-                                        <p><?= e($user['role']) ?></p>
-                                    </div>
-                                </div>
-                                <div class="director-dropdown-body">
-                                    <div class="director-detail-row">
-                                        <span class="director-detail-label">Staff ID</span>
-                                        <span class="director-detail-value"><?= e($user['staff_id']) ?></span>
-                                    </div>
-                                    <div class="director-detail-row">
-                                        <span class="director-detail-label">Email</span>
-                                        <span class="director-detail-value"><?= e($user['email']) ?></span>
-                                    </div>
-                                    <div class="director-detail-row">
-                                        <span class="director-detail-label">Campus</span>
-                                        <span class="director-detail-value"><?= e($user['campus']) ?></span>
-                                    </div>
-                                </div>
-                                <div class="director-dropdown-footer">
-                                    <form method="post"
-                                          action="<?= e(profilePhotoUploadAction()) ?>"
-                                          enctype="multipart/form-data"
-                                          class="mb-2">
-                                        <input type="hidden" name="redirect_to" value="<?= e((string) ($_SERVER['REQUEST_URI'] ?? '')) ?>">
-                                        <input type="file"
-                                               id="headerProfilePhotoInput"
-                                               name="profile_photo"
-                                               class="d-none"
-                                               accept="image/jpeg,image/png,image/webp,image/gif"
-                                               data-profile-photo-input>
-                                        <button type="button"
-                                                class="btn btn-outline-light btn-sm w-100"
-                                                data-profile-photo-trigger="headerProfilePhotoInput">
-                                            <i class="bi bi-camera me-1"></i>
-                                            <?= !empty($user['has_photo']) ? 'Change photo' : 'Add profile photo' ?>
-                                        </button>
-                                    </form>
-                                    <a href="<?= e($logoutUrl) ?>" class="director-signout-link btn btn-danger btn-sm w-100">
-                                        <i class="bi bi-box-arrow-right me-1"></i> Logout
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <a href="<?= e($logoutUrl) ?>"
-                           class="btn btn-sm btn-warning fw-semibold app-logout-btn d-none d-lg-inline-flex align-items-center">
-                            <i class="bi bi-box-arrow-right me-1"></i> Logout
-                        </a>
-
-                        <a href="<?= e($logoutUrl) ?>"
-                           class="btn btn-sm btn-warning fw-semibold app-logout-btn d-lg-none w-100 mt-2">
-                            <i class="bi bi-box-arrow-right me-1"></i> Logout
-                        </a>
-                    </div>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
     </nav>
 
     <?php if ($showNotificationBar && $primaryNotice !== null): ?>
-        <div class="alert alert-dark app-notification-bar alert-dismissible fade show rounded-0 mb-0 border-0"
+        <?php
+        $noticeTone = (string) ($primaryNotice['tone'] ?? '');
+        $noticeIcon = match ($noticeTone) {
+            'success' => 'bi-check-circle-fill',
+            'error'   => 'bi-exclamation-triangle-fill',
+            default   => 'bi-bell-fill',
+        };
+        $noticeDetail = trim((string) ($primaryNotice['detail'] ?? ''));
+        ?>
+        <div class="alert alert-light app-notification-bar alert-dismissible fade show rounded-0 mb-0<?= $noticeTone !== '' ? ' app-notification-bar-' . $noticeTone : '' ?>"
              role="alert"
              id="appNotificationBar">
             <div class="container-fluid px-3 px-lg-4 d-flex align-items-start gap-2">
                 <?php if (!empty($primaryNotice['href']) && directorCurrentSection() !== 'review'): ?>
                     <a href="<?= e($primaryNotice['href']) ?>"
                        class="app-notification-bar-link flex-grow-1 d-flex align-items-start gap-2 text-decoration-none">
-                        <i class="bi bi-bell-fill app-notification-icon flex-shrink-0" aria-hidden="true"></i>
+                        <i class="bi <?= e($noticeIcon) ?> app-notification-icon flex-shrink-0" aria-hidden="true"></i>
                         <span class="flex-grow-1">
                             <strong class="d-block small"><?= e($primaryNotice['title']) ?></strong>
-                            <span class="small opacity-75"><?= e($primaryNotice['detail']) ?></span>
+                            <?php if ($noticeDetail !== ''): ?>
+                                <span class="small opacity-75"><?= e($noticeDetail) ?></span>
+                            <?php endif; ?>
                             <?php if ($notificationCount > 1): ?>
                                 <span class="badge bg-warning text-dark ms-2"><?= (int) $notificationCount ?> total</span>
                             <?php endif; ?>
                         </span>
                     </a>
                 <?php else: ?>
-                    <i class="bi bi-bell-fill app-notification-icon flex-shrink-0" aria-hidden="true"></i>
+                    <i class="bi <?= e($noticeIcon) ?> app-notification-icon flex-shrink-0" aria-hidden="true"></i>
                     <div class="flex-grow-1">
                         <strong class="d-block small"><?= e($primaryNotice['title']) ?></strong>
-                        <span class="small opacity-75"><?= e($primaryNotice['detail']) ?></span>
+                        <?php if ($noticeDetail !== ''): ?>
+                            <span class="small opacity-75"><?= e($noticeDetail) ?></span>
+                        <?php endif; ?>
                         <?php if ($notificationCount > 1): ?>
                             <span class="badge bg-warning text-dark ms-2"><?= (int) $notificationCount ?> total</span>
                         <?php endif; ?>
